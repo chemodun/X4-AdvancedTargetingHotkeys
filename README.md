@@ -1,0 +1,138 @@
+# Advanced Targeting Hotkeys
+
+Filtered target acquisition for X4: Foundations, bindable through the native game keybinding UI. Pick the nearest enemy, incoming missile, own ship, station, gate, collectable, asteroid or surface element, then cycle **only within that category** instead of through everything in the sector.
+
+Built on the [Native Hotkey API](https://www.nexusmods.com/x4foundations/mods/2181). No external process, no pipe server.
+
+## Overview
+
+Vanilla gives you "Next Target" and "Previous Target", and they cycle through every object around you. That is fine until you are in a fight next to a station, where getting back to the fighter that is shooting at you means pressing the key past a dozen storage modules and a lockbox.
+
+This mod adds a **sticky filter**. Every acquisition hotkey does two things: it targets the nearest matching object, and it remembers what kind of thing you asked for. From then on Next/Previous only walk that category. Press "Target Nearest Enemy" and Next cycles enemies. Press "Target Nearest Station" and Next cycles stations. Press "Target Nearest Turret" and Next walks the turrets of the hull you are attacking, which is what you actually want while preparing a boarding operation.
+
+The filter is dropped again the moment you change target by any other means: a mouse click, one of the vanilla targeting keys, or the target being destroyed or leaving the sector. Next/Previous then go back to cycling everything, exactly as they do in vanilla. Nothing gets stuck.
+
+Two things are deliberately kept alive across a kill, because dropping them would be actively annoying:
+
+- Destroying a **surface element** keeps you in surface mode, so you can keep working through a hull without re-pressing the acquisition key after every turret.
+- Running out of one **type** of surface element (say, the last engine) widens the filter to all remaining surface elements of that same hull, rather than dumping you back out to free targeting.
+
+## Requirements
+
+- **X4: Foundations** version **8.00** or higher.
+- **Native Hotkey API** version **8.00.07** or higher, which in turn requires **UI Extensions and HUD** by [kuertee](https://next.nexusmods.com/profile/kuertee?gameId=2659).
+
+## Hotkeys
+
+All 19 actions are **pilot-area**: they fire while you are at the controls of a ship with no menu open. None of them come bound to a key. Assign the ones you want under **Options > Hotkey Management > Hotkey Bindings**.
+
+### Acquisition
+
+Each of these targets the nearest match and switches the filter to that category.
+
+| Hotkey | What it picks |
+|---|---|
+| Target Nearest Enemy | Nearest hostile ship, drone, mine, missile or explosive |
+| Target Nearest Enemy \(XS-M\) | Nearest hostile fighter-class or medium ship |
+| Target Nearest Enemy \(L-XL\) | Nearest hostile capital ship |
+| Target Nearest Incoming Missile | Nearest missile actually aimed at you, so you can shoot it down |
+| Target Nearest Own Ship | Nearest ship you own, excluding the one you are flying |
+| Target Nearest Own Ship for Landing | Nearest ship you own with a docking bay that fits your current hull, for when you need somewhere to run to |
+| Target Nearest Station | Nearest known station |
+| Target Nearest Gate | Nearest known gate, accelerator or highway entry |
+| Target Nearest Collectable | Nearest known dropped ware or lockbox |
+| Target Nearest Asteroid | Nearest known asteroid, for manual mining |
+| Target Nearest Surface Element | Nearest working surface element of your current target |
+| Target Nearest Engine | Same, restricted to engines |
+| Target Nearest Turret | Same, restricted to turrets and launchers |
+| Target Nearest Shield Generator | Same, restricted to shield generators |
+| Target Active Mission Object | The object your current mission points at |
+
+The four surface-element hotkeys work with nothing targeted at all: they fall back to the nearest visible medium or larger ship or station and start there.
+
+### Navigation
+
+| Hotkey | What it does |
+|---|---|
+| Select Next Target \(Filtered\) | Next object in the active filter, by distance, wrapping around |
+| Select Previous Target \(Filtered\) | Previous object. With no target selected, starts from the farthest one |
+| Deselect Target and Reset Filter | Clears the target **and** the filter |
+| Target Along Line of Sight | Picks whatever you are looking at |
+
+**Target Along Line of Sight** starts from a one-degree cone dead ahead and widens in steps to 25 degrees, stopping as soon as it finds something. Whatever is actually under your crosshair therefore always wins over something merely in front of the ship. Surface elements are searched at each step too, with a range limit that tightens as the cone widens, so a wide-angle sweep cannot snap you onto a random turret on a distant station.
+
+Range rules follow the radar: ordinary objects have to be inside your ship's radar range, while capital ships, stations and gates stay pickable considerably further out, since you can see them anyway.
+
+### When nothing matches
+
+A hotkey never substitutes a different kind of object for the one you asked for. Press "Target Nearest Station" with no station in range and your current target is left exactly as it was, with a fail sound and a message naming the category that came up empty. The same applies to Next/Previous: if the active filter has nothing left in it, they do nothing rather than silently dropping you back into cycling everything.
+
+The one exception is deliberate and stays inside the category you asked for: if the hull you are attacking has no engines left, "Next" in engine mode widens to that hull's remaining surface elements rather than stranding you.
+
+## Relationship to the vanilla targeting hotkeys
+
+X4 already has a **Target Management** group under **Options > Controls**. Four of its entries do a simpler version of what this mod does, and running both at once on different keys is confusing, because the vanilla ones ignore the filter completely.
+
+Recommendation: bind this mod's versions and clear the vanilla ones.
+
+| Vanilla control | This mod's replacement | Difference |
+|---|---|---|
+| Target Closest Hostile | Target Nearest Enemy | Also sets the filter; also finds mines and explosives |
+| Target Object | Target Along Line of Sight | Widening cone from dead centre instead of simply the closest object |
+| Next Target | Select Next Target | Cycles the filter, not everything |
+| Previous Target | Select Previous Target | Same |
+| Deselect Target | Deselect Target and Reset Filter | Also clears the filter |
+
+Two vanilla controls are left alone on purpose and remain useful alongside this mod:
+
+- **Toggle Target Lock** is not duplicated here at all.
+- **Next / Previous Surface Element** already cycle surface elements. They have no type filter, which is exactly the gap the engine/turret/shield hotkeys fill.
+
+## Configuration
+
+Settings live in `player.entity.$AdvancedTargetingHotkeysConfig` and are created with working defaults on first run. There is no options screen in this version; per-hotkey enabling and disabling is already available on the Native Hotkey API's own **Hotkey Requests** page.
+
+| Setting | Default | Effect |
+|---|---|---|
+| `$groupCombatEnabled` | `true` | Register the four enemy/missile hotkeys |
+| `$groupFleetEnabled` | `true` | Register the two own-ship hotkeys |
+| `$groupNavigationEnabled` | `true` | Register the station and gate hotkeys |
+| `$groupResourcesEnabled` | `true` | Register the collectable and asteroid hotkeys |
+| `$groupSurfaceEnabled` | `true` | Register the four surface-element hotkeys |
+| `$groupMissionEnabled` | `true` | Register the mission-object hotkey |
+| `$rangeMultiplier` | `2` | How far beyond radar range large and already-known objects stay pickable |
+| `$soundEnabled` | `true` | Play a confirmation blip on success and a fail blip when nothing matched |
+| `$notifyOnFailure` | `true` | Show a message naming the category when a hotkey finds nothing |
+| `$stickyModeEnabled` | `true` | Set to `false` to make Next/Previous always cycle everything, vanilla-style |
+| `$dockableScanLimit` | `12` | How many nearby own ships are checked for a free docking bay |
+| `$targetingBackend` | `'lua'` | How the target is applied. See below |
+
+Turning a whole group off means those hotkeys are never registered, so they do not occupy one of the Native Hotkey API's 48 shared slots. Turning a hotkey off from the API's own Requests page frees its slot too, and is the easier route for individual actions.
+
+`$targetingBackend` chooses between two ways of setting the target. `'lua'` goes through this mod's small UI script and the same engine call the game itself uses for component slots, which covers surface elements. `'md'` uses the Mission Director's own `set_player_target` instead, which is simpler but is not confirmed to work on surface elements.
+
+## Limitations
+
+- The hotkeys only fire while you are piloting a ship with no menu open. There are no map-mode or on-foot variants.
+- Candidate lists are rebuilt on every key press, so they always reflect the current situation. On a very large station with hundreds of surface elements this is measurable work per press.
+- The Native Hotkey API's 48-slot pool is shared with every other mod using it. This mod asks for 19 of them with everything enabled.
+- Key bindings in X4 are stored per profile, not in the save, so bindings created in one game carry over to any other save using the same profile.
+
+## Credits
+
+- **Author**: Chem O`Dun, on [Nexus Mods](https://next.nexusmods.com/profile/ChemODun/mods?gameId=2659) and [Steam Workshop](https://steamcommunity.com/id/chemodun/myworkshopfiles/?appid=392160)
+- *"X4: Foundations"* is a trademark of [Egosoft](https://www.egosoft.com).
+
+## Acknowledgements
+
+- [EGOSOFT](https://www.egosoft.com) for the X series.
+- **Trajan von Olb**, whose *More Hotkeys: Advanced Targeting* is where the sticky-filter idea comes from. This mod is an independent implementation of that concept on a different foundation, sharing no code with it.
+- [kuertee](https://next.nexusmods.com/profile/kuertee?gameId=2659) for *UI Extensions and HUD*, which the Native Hotkey API is built on.
+
+## Changelog
+
+### [1.00] - 2026-07-28
+
+- **Added**
+  - Initial version: 19 pilot-area targeting hotkeys, sticky category filter with automatic invalidation, type-filtered surface-element targeting with widening fallback, widening-cone line-of-sight pick, and configurable hotkey groups.
+  - A hotkey that finds nothing leaves the current target untouched and reports which category came up empty, rather than substituting a different kind of object.

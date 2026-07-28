@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Advanced Targeting Hotkeys - Portuguese text, page 1972092437 -->
+<diff>
+  <add sel="/language">
+    <page id="1972092437" title="Atalhos de seleção avançada de alvos" descr="" voice="no">
+      <!-- mod identity -->
+      <t id="1">Atalhos de seleção avançada de alvos</t>
+      <t id="2">Teclas de atalho de seleção filtrada baseadas na API nativa de teclas de atalho.</t>
+      <!-- acquisition - combat -->
+      <t id="1001">Fixar o inimigo mais próximo</t>
+      <t id="1002">Fixar o inimigo mais próximo \(XS-M\)</t>
+      <t id="1003">Fixar o inimigo mais próximo \(L-XL\)</t>
+      <t id="1004">Fixar o míssil que se aproxima mais próximo</t>
+      <!-- acquisition - own fleet -->
+      <t id="1005">Fixar a nave própria mais próxima</t>
+      <t id="1006">Fixar a nave própria mais próxima para pousar</t>
+      <!-- acquisition - navigation -->
+      <t id="1007">Fixar a estação mais próxima</t>
+      <t id="1008">Fixar o portal mais próximo</t>
+      <!-- acquisition - resources -->
+      <t id="1009">Fixar o objeto coletável mais próximo</t>
+      <t id="1010">Fixar o asteroide mais próximo</t>
+      <!-- acquisition - surface elements -->
+      <t id="1011">Fixar o elemento de superfície mais próximo</t>
+      <t id="1012">Fixar o motor mais próximo</t>
+      <t id="1013">Fixar a torre mais próxima</t>
+      <t id="1014">Fixar o gerador de escudo mais próximo</t>
+      <!-- navigation and utility -->
+      <t id="1015">Próximo alvo \(filtrado\)</t>
+      <t id="1016">Alvo anterior \(filtrado\)</t>
+      <t id="1017">Desmarcar alvo e redefinir filtro</t>
+      <t id="1018">Fixar alvo na linha de visão</t>
+      <!-- acquisition - mission -->
+      <t id="1019">Fixar objeto de missão ativo</t>
+      <!-- status messages -->
+      <t id="2001">%s: nenhum alvo correspondente encontrado</t>
+      <t id="2002">Nenhum alvo correspondente encontrado</t>
+    </page>
+  </add>
+</diff>

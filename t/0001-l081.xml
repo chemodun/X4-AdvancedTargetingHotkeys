@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Advanced Targeting Hotkeys - Japanese text, page 1972092437 -->
+<diff>
+  <add sel="/language">
+    <page id="1972092437" title="高度なターゲティングホットキー" descr="" voice="no">
+      <!-- mod identity -->
+      <t id="1">高度なターゲティングホットキー</t>
+      <t id="2">ネイティブホットキーAPIを基にした、絞り込みターゲティングのホットキー集。</t>
+      <!-- acquisition - combat -->
+      <t id="1001">最寄りの敵を捕捉</t>
+      <t id="1002">最寄りの敵を捕捉 \(XS-M\)</t>
+      <t id="1003">最寄りの敵を捕捉 \(L-XL\)</t>
+      <t id="1004">最寄りの飛来ミサイルを捕捉</t>
+      <!-- acquisition - own fleet -->
+      <t id="1005">最寄りの自艦隊の船を捕捉</t>
+      <t id="1006">着艦可能な最寄りの自艦隊の船を捕捉</t>
+      <!-- acquisition - navigation -->
+      <t id="1007">最寄りのステーションを捕捉</t>
+      <t id="1008">最寄りのゲートを捕捉</t>
+      <!-- acquisition - resources -->
+      <t id="1009">最寄りの回収物を捕捉</t>
+      <t id="1010">最寄りの小惑星を捕捉</t>
+      <!-- acquisition - surface elements -->
+      <t id="1011">最寄りの表面要素を捕捉</t>
+      <t id="1012">最寄りのエンジンを捕捉</t>
+      <t id="1013">最寄りの砲塔を捕捉</t>
+      <t id="1014">最寄りのシールド発生装置を捕捉</t>
+      <!-- navigation and utility -->
+      <t id="1015">次のターゲット \(絞り込み\)</t>
+      <t id="1016">前のターゲット \(絞り込み\)</t>
+      <t id="1017">ターゲット解除と絞り込みリセット</t>
+      <t id="1018">視線方向のターゲットを捕捉</t>
+      <!-- acquisition - mission -->
+      <t id="1019">進行中のミッション対象を捕捉</t>
+      <!-- status messages -->
+      <t id="2001">%s: 該当するターゲットがありません</t>
+      <t id="2002">該当するターゲットがありません</t>
+    </page>
+  </add>
+</diff>

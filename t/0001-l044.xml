@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Advanced Targeting Hotkeys - English text, page 1972092437 -->
+<diff>
+  <add sel="/language">
+    <page id="1972092437" title="Advanced Targeting Hotkeys" descr="" voice="no">
+      <!-- mod identity -->
+      <t id="1">Advanced Targeting Hotkeys</t>
+      <t id="2">Filtered targeting hotkeys built on the Native Hotkey API.</t>
+      <!-- acquisition - combat -->
+      <t id="1001">Target Nearest Enemy</t>
+      <t id="1002">Target Nearest Enemy \(XS-M\)</t>
+      <t id="1003">Target Nearest Enemy \(L-XL\)</t>
+      <t id="1004">Target Nearest Incoming Missile</t>
+      <!-- acquisition - own fleet -->
+      <t id="1005">Target Nearest Own Ship</t>
+      <t id="1006">Target Nearest Own Ship for Landing</t>
+      <!-- acquisition - navigation -->
+      <t id="1007">Target Nearest Station</t>
+      <t id="1008">Target Nearest Gate</t>
+      <!-- acquisition - resources -->
+      <t id="1009">Target Nearest Collectable</t>
+      <t id="1010">Target Nearest Asteroid</t>
+      <!-- acquisition - surface elements -->
+      <t id="1011">Target Nearest Surface Element</t>
+      <t id="1012">Target Nearest Engine</t>
+      <t id="1013">Target Nearest Turret</t>
+      <t id="1014">Target Nearest Shield Generator</t>
+      <!-- navigation and utility -->
+      <t id="1015">Select Next Target \(Filtered\)</t>
+      <t id="1016">Select Previous Target \(Filtered\)</t>
+      <t id="1017">Deselect Target and Reset Filter</t>
+      <t id="1018">Target Along Line of Sight</t>
+      <!-- acquisition - mission -->
+      <t id="1019">Target Active Mission Object</t>
+      <!-- status messages -->
+      <t id="2001">%s: no matching target found</t>
+      <t id="2002">No matching target found</t>
+    </page>
+  </add>
+</diff>

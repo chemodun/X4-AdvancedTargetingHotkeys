@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Advanced Targeting Hotkeys - Turkish text, page 1972092437 -->
+<diff>
+  <add sel="/language">
+    <page id="1972092437" title="Gelişmiş Hedefleme Kısayolları" descr="" voice="no">
+      <!-- mod identity -->
+      <t id="1">Gelişmiş Hedefleme Kısayolları</t>
+      <t id="2">Yerel Kısayol Tuşu API'si üzerine kurulu filtreli hedefleme kısayolları.</t>
+      <!-- acquisition - combat -->
+      <t id="1001">En yakın düşmanı hedefle</t>
+      <t id="1002">En yakın düşmanı hedefle \(XS-M\)</t>
+      <t id="1003">En yakın düşmanı hedefle \(L-XL\)</t>
+      <t id="1004">En yakın gelen füzeyi hedefle</t>
+      <!-- acquisition - own fleet -->
+      <t id="1005">En yakın kendi gemini hedefle</t>
+      <t id="1006">İnilebilir en yakın kendi gemini hedefle</t>
+      <!-- acquisition - navigation -->
+      <t id="1007">En yakın istasyonu hedefle</t>
+      <t id="1008">En yakın geçidi hedefle</t>
+      <!-- acquisition - resources -->
+      <t id="1009">En yakın toplanabilir nesneyi hedefle</t>
+      <t id="1010">En yakın asteroidi hedefle</t>
+      <!-- acquisition - surface elements -->
+      <t id="1011">En yakın yüzey bileşenini hedefle</t>
+      <t id="1012">En yakın motoru hedefle</t>
+      <t id="1013">En yakın tareti hedefle</t>
+      <t id="1014">En yakın kalkan üretecini hedefle</t>
+      <!-- navigation and utility -->
+      <t id="1015">Sonraki hedef \(filtreli\)</t>
+      <t id="1016">Önceki hedef \(filtreli\)</t>
+      <t id="1017">Hedefi bırak ve filtreyi sıfırla</t>
+      <t id="1018">Görüş hattındaki hedefi hedefle</t>
+      <!-- acquisition - mission -->
+      <t id="1019">Etkin görev nesnesini hedefle</t>
+      <!-- status messages -->
+      <t id="2001">%s: uygun hedef bulunamadı</t>
+      <t id="2002">Uygun hedef bulunamadı</t>
+    </page>
+  </add>
+</diff>

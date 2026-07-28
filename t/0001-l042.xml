@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Advanced Targeting Hotkeys - Czech text, page 1972092437 -->
+<diff>
+  <add sel="/language">
+    <page id="1972092437" title="Pokročilé klávesové zkratky zaměřování" descr="" voice="no">
+      <!-- mod identity -->
+      <t id="1">Pokročilé klávesové zkratky zaměřování</t>
+      <t id="2">Klávesové zkratky pro filtrované zaměřování založené na nativním Hotkey API.</t>
+      <!-- acquisition - combat -->
+      <t id="1001">Zaměřit nejbližšího nepřítele</t>
+      <t id="1002">Zaměřit nejbližšího nepřítele \(XS-M\)</t>
+      <t id="1003">Zaměřit nejbližšího nepřítele \(L-XL\)</t>
+      <t id="1004">Zaměřit nejbližší přilétající raketu</t>
+      <!-- acquisition - own fleet -->
+      <t id="1005">Zaměřit nejbližší vlastní loď</t>
+      <t id="1006">Zaměřit nejbližší vlastní loď k přistání</t>
+      <!-- acquisition - navigation -->
+      <t id="1007">Zaměřit nejbližší stanici</t>
+      <t id="1008">Zaměřit nejbližší bránu</t>
+      <!-- acquisition - resources -->
+      <t id="1009">Zaměřit nejbližší sběratelný objekt</t>
+      <t id="1010">Zaměřit nejbližší asteroid</t>
+      <!-- acquisition - surface elements -->
+      <t id="1011">Zaměřit nejbližší povrchový prvek</t>
+      <t id="1012">Zaměřit nejbližší motor</t>
+      <t id="1013">Zaměřit nejbližší věž</t>
+      <t id="1014">Zaměřit nejbližší štítový generátor</t>
+      <!-- navigation and utility -->
+      <t id="1015">Další cíl \(filtrovaný\)</t>
+      <t id="1016">Předchozí cíl \(filtrovaný\)</t>
+      <t id="1017">Zrušit cíl a resetovat filtr</t>
+      <t id="1018">Zaměřit v přímé linii pohledu</t>
+      <!-- acquisition - mission -->
+      <t id="1019">Zaměřit aktivní misijní objekt</t>
+      <!-- status messages -->
+      <t id="2001">%s: nenalezen žádný odpovídající cíl</t>
+      <t id="2002">Nenalezen žádný odpovídající cíl</t>
+    </page>
+  </add>
+</diff>

@@ -1,0 +1,1095 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mdscript name="AdvancedTargetingHotkeys" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <!--
+  Advanced Targeting Hotkeys.
+
+  Registers filtered target-acquisition hotkeys through md.HotkeyApi.Register_Action
+  (area 'pilot' - the player is at the controls of a ship, no menu open; the API
+  itself guarantees that before any of these cues is signalled, so none of them
+  re-check it).
+
+  Central idea: every acquisition hotkey also sets a *sticky mode*. Next/Previous
+  then cycle only within that mode's candidate list - after "nearest station" they
+  cycle stations, after "nearest engine" they cycle that hull's engines, and so on.
+  The mode is dropped again as soon as the player changes target by any other means
+  (mouse, a vanilla targeting hotkey, target loss) - see On_Target_Changed.
+
+  Structure note: BuildCandidates is the single place that knows how to turn a mode
+  into a distance-sorted candidate group, and it is shared by acquisition, Next and
+  Previous alike. Adding a mode means one branch there plus one branch in
+  ResolveMode - nothing else.
+  -->
+  <cues>
+
+    <!--
+      Reads (or initialises) mod config from player.entity.$AdvancedTargetingHotkeysConfig.
+      Leaves a local $config reference.
+      -->
+    <library name="LoadConfig" purpose="include_actions" version="1">
+      <actions>
+        <do_if value="@player.entity.$AdvancedTargetingHotkeysConfig == null">
+          <set_value name="player.entity.$AdvancedTargetingHotkeysConfig" exact="table[
+            $groupCombatEnabled     = true,
+            $groupFleetEnabled      = true,
+            $groupNavigationEnabled = true,
+            $groupResourcesEnabled  = true,
+            $groupSurfaceEnabled    = true,
+            $groupMissionEnabled    = true,
+            $rangeMultiplier        = 2,
+            $soundEnabled           = true,
+            $notifyOnFailure        = true,
+            $stickyModeEnabled      = true,
+            $dockableScanLimit      = 12,
+            $targetingBackend       = 'lua',
+          ]" />
+        </do_if>
+        <set_value name="$config" exact="player.entity.$AdvancedTargetingHotkeysConfig" />
+        <!-- forward-compat: fill in keys added by a later version -->
+        <do_if value="not $config.$groupCombatEnabled?">
+          <set_value name="$config.$groupCombatEnabled" exact="true" />
+        </do_if>
+        <do_if value="not $config.$groupFleetEnabled?">
+          <set_value name="$config.$groupFleetEnabled" exact="true" />
+        </do_if>
+        <do_if value="not $config.$groupNavigationEnabled?">
+          <set_value name="$config.$groupNavigationEnabled" exact="true" />
+        </do_if>
+        <do_if value="not $config.$groupResourcesEnabled?">
+          <set_value name="$config.$groupResourcesEnabled" exact="true" />
+        </do_if>
+        <do_if value="not $config.$groupSurfaceEnabled?">
+          <set_value name="$config.$groupSurfaceEnabled" exact="true" />
+        </do_if>
+        <do_if value="not $config.$groupMissionEnabled?">
+          <set_value name="$config.$groupMissionEnabled" exact="true" />
+        </do_if>
+        <do_if value="not $config.$rangeMultiplier?">
+          <set_value name="$config.$rangeMultiplier" exact="2" />
+        </do_if>
+        <do_if value="not $config.$soundEnabled?">
+          <set_value name="$config.$soundEnabled" exact="true" />
+        </do_if>
+        <do_if value="not $config.$notifyOnFailure?">
+          <set_value name="$config.$notifyOnFailure" exact="true" />
+        </do_if>
+        <do_if value="not $config.$stickyModeEnabled?">
+          <set_value name="$config.$stickyModeEnabled" exact="true" />
+        </do_if>
+        <do_if value="not $config.$dockableScanLimit?">
+          <set_value name="$config.$dockableScanLimit" exact="12" />
+        </do_if>
+        <do_if value="not $config.$targetingBackend?">
+          <set_value name="$config.$targetingBackend" exact="'lua'" />
+        </do_if>
+      </actions>
+    </library>
+
+    <!--
+      Runtime (non-settings) state, reset on every game start/load by Init_State.
+      Leaves a local $state reference. Every key is always present, so consumers
+      can test for null values without also having to test for a missing key.
+
+      $selfChange is the "this target change was mine" flag: set immediately
+      before the target is applied, cleared by On_Target_Changed. Without it,
+      our own set-target would look identical to a mouse click and would clear
+      the very mode we just established.
+      -->
+    <library name="LoadState" purpose="include_actions" version="1">
+      <actions>
+        <do_if value="@player.entity.$AdvancedTargetingHotkeysState == null">
+          <set_value name="player.entity.$AdvancedTargetingHotkeysState" exact="table[
+            $mode          = null,
+            $surfaceMode   = null,
+            $surfaceParent = null,
+            $surfaceTarget = null,
+            $selfChange    = false,
+          ]" />
+        </do_if>
+        <set_value name="$state" exact="player.entity.$AdvancedTargetingHotkeysState" />
+      </actions>
+    </library>
+
+    <!--
+      Wipes all sticky-mode state back to "free mode" (no filter).
+      Caller must already hold $state.
+      -->
+    <library name="ResetMode" purpose="include_actions">
+      <actions>
+        <set_value name="$state.$mode" exact="null" />
+        <set_value name="$state.$surfaceMode" exact="null" />
+        <set_value name="$state.$surfaceParent" exact="null" />
+        <set_value name="$state.$surfaceTarget" exact="null" />
+      </actions>
+    </library>
+
+    <!--
+      Common per-invocation scratch values every targeting cue needs:
+      $ownShip (the hull actually being flown), $radar (its radar range) and
+      $farRadar (the extended range large/known objects are still pickable at).
+      -->
+    <library name="LoadShipContext" purpose="include_actions">
+      <actions>
+        <set_value name="$ownShip" exact="@player.occupiedship" />
+        <do_if value="$ownShip == null">
+          <set_value name="$ownShip" exact="player.ship" />
+        </do_if>
+        <set_value name="$radar" exact="$ownShip.maxradarrange" />
+        <set_value name="$farRadar" exact="$radar * $config.$rangeMultiplier" />
+      </actions>
+    </library>
+
+    <!--
+      Maps a registered hotkey id ($id) to its sticky mode ($mode).
+      'mission' is a pseudo-mode: it has no candidate list of its own and never
+      becomes sticky (see Acquire_Target_Cue).
+      -->
+    <library name="ResolveMode" purpose="include_actions">
+      <actions>
+        <set_value name="$mode" exact="null" />
+        <do_if value="$id == 'ath_target_enemy'">
+          <set_value name="$mode" exact="'enemyAll'" />
+        </do_if>
+        <do_elseif value="$id == 'ath_target_enemy_small'">
+          <set_value name="$mode" exact="'enemySmall'" />
+        </do_elseif>
+        <do_elseif value="$id == 'ath_target_enemy_large'">
+          <set_value name="$mode" exact="'enemyLarge'" />
+        </do_elseif>
+        <do_elseif value="$id == 'ath_target_missile'">
+          <set_value name="$mode" exact="'missiles'" />
+        </do_elseif>
+        <do_elseif value="$id == 'ath_target_own_ship'">
+          <set_value name="$mode" exact="'ownAll'" />
+        </do_elseif>
+        <do_elseif value="$id == 'ath_target_own_dockable'">
+          <set_value name="$mode" exact="'ownDockable'" />
+        </do_elseif>
+        <do_elseif value="$id == 'ath_target_station'">
+          <set_value name="$mode" exact="'stations'" />
+        </do_elseif>
+        <do_elseif value="$id == 'ath_target_gate'">
+          <set_value name="$mode" exact="'gates'" />
+        </do_elseif>
+        <do_elseif value="$id == 'ath_target_collectable'">
+          <set_value name="$mode" exact="'collectables'" />
+        </do_elseif>
+        <do_elseif value="$id == 'ath_target_asteroid'">
+          <set_value name="$mode" exact="'asteroids'" />
+        </do_elseif>
+        <do_elseif value="$id == 'ath_target_surface'">
+          <set_value name="$mode" exact="'surfaceAll'" />
+        </do_elseif>
+        <do_elseif value="$id == 'ath_target_surface_engine'">
+          <set_value name="$mode" exact="'surfaceEngines'" />
+        </do_elseif>
+        <do_elseif value="$id == 'ath_target_surface_turret'">
+          <set_value name="$mode" exact="'surfaceTurrets'" />
+        </do_elseif>
+        <do_elseif value="$id == 'ath_target_surface_shield'">
+          <set_value name="$mode" exact="'surfaceShields'" />
+        </do_elseif>
+        <do_elseif value="$id == 'ath_target_mission'">
+          <set_value name="$mode" exact="'mission'" />
+        </do_elseif>
+      </actions>
+    </library>
+
+    <!--
+      True (in $isSurfaceMode) if $mode is one of the four surface-element modes.
+      -->
+    <library name="IsSurfaceMode" purpose="include_actions">
+      <actions>
+        <set_value name="$isSurfaceMode" exact="$mode == 'surfaceAll' or $mode == 'surfaceEngines' or $mode == 'surfaceTurrets' or $mode == 'surfaceShields'" />
+      </actions>
+    </library>
+
+    <!--
+      Maps $mode back to the text id of the hotkey that establishes it, so the
+      "nothing found" notification can name the category the player actually asked
+      for. Reuses the action display names rather than needing its own set of
+      translated category labels. 0 means "no name" (free mode), which the caller
+      renders as the generic message instead.
+      -->
+    <library name="ResolveModeName" purpose="include_actions">
+      <actions>
+        <set_value name="$nameId" exact="0" />
+        <do_if value="$mode == 'enemyAll'">
+          <set_value name="$nameId" exact="1001" />
+        </do_if>
+        <do_elseif value="$mode == 'enemySmall'">
+          <set_value name="$nameId" exact="1002" />
+        </do_elseif>
+        <do_elseif value="$mode == 'enemyLarge'">
+          <set_value name="$nameId" exact="1003" />
+        </do_elseif>
+        <do_elseif value="$mode == 'missiles'">
+          <set_value name="$nameId" exact="1004" />
+        </do_elseif>
+        <do_elseif value="$mode == 'ownAll'">
+          <set_value name="$nameId" exact="1005" />
+        </do_elseif>
+        <do_elseif value="$mode == 'ownDockable'">
+          <set_value name="$nameId" exact="1006" />
+        </do_elseif>
+        <do_elseif value="$mode == 'stations'">
+          <set_value name="$nameId" exact="1007" />
+        </do_elseif>
+        <do_elseif value="$mode == 'gates'">
+          <set_value name="$nameId" exact="1008" />
+        </do_elseif>
+        <do_elseif value="$mode == 'collectables'">
+          <set_value name="$nameId" exact="1009" />
+        </do_elseif>
+        <do_elseif value="$mode == 'asteroids'">
+          <set_value name="$nameId" exact="1010" />
+        </do_elseif>
+        <do_elseif value="$mode == 'surfaceAll'">
+          <set_value name="$nameId" exact="1011" />
+        </do_elseif>
+        <do_elseif value="$mode == 'surfaceEngines'">
+          <set_value name="$nameId" exact="1012" />
+        </do_elseif>
+        <do_elseif value="$mode == 'surfaceTurrets'">
+          <set_value name="$nameId" exact="1013" />
+        </do_elseif>
+        <do_elseif value="$mode == 'surfaceShields'">
+          <set_value name="$nameId" exact="1014" />
+        </do_elseif>
+        <do_elseif value="$mode == 'mission'">
+          <set_value name="$nameId" exact="1019" />
+        </do_elseif>
+      </actions>
+    </library>
+
+    <!--
+      Decides which hull's surface elements the surface modes should iterate,
+      leaving it in $parent (null if there is nothing usable).
+
+      Priority: the current target's parent if a surface element is targeted ->
+      the current target itself -> the hull remembered from the last surface
+      acquisition -> the nearest visible M/L/XL ship or station. The last step is
+      what makes "target nearest turret" work with no target selected at all.
+      -->
+    <library name="ResolveSurfaceParent" purpose="include_actions">
+      <actions>
+        <set_value name="$parent" exact="null" />
+        <do_if value="player.target != null">
+          <do_if value="player.target.issurfaceelement">
+            <set_value name="$parent" exact="player.target.parent" />
+          </do_if>
+          <do_else>
+            <set_value name="$parent" exact="player.target" />
+          </do_else>
+        </do_if>
+        <do_elseif value="$state.$surfaceParent != null">
+          <set_value name="$parent" exact="$state.$surfaceParent" />
+        </do_elseif>
+        <do_if value="$parent == null">
+          <find_object name="$parentCandidates" class="[class.ship_m, class.ship_l, class.ship_xl, class.station]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
+            <match_attention min="attention.visible" />
+          </find_object>
+          <do_all counter="$i" exact="$parentCandidates.count">
+            <do_if value="$parentCandidates.{$i} != $ownShip">
+              <set_value name="$parent" exact="$parentCandidates.{$i}" />
+              <break />
+            </do_if>
+          </do_all>
+        </do_if>
+        <!--
+          Surface elements of something you cannot actually see are not pickable.
+          The @ guards the case where the remembered hull has since been destroyed.
+          -->
+        <do_if value="$parent != null and not (@$parent.isknown and @$parent.isradarvisible)">
+          <set_value name="$parent" exact="null" />
+        </do_if>
+      </actions>
+    </library>
+
+    <!--
+      Shared visibility rule, applied to $candidate, answering in $targetable.
+
+      Anything player-owned is always fair game; everything else has to be inside
+      radar range, with capital ships (and other genuinely large, always-rendered
+      things - stations and gates) allowed considerably further out. This is what
+      lets a station be picked across half a sector while a fighter cannot.
+      -->
+    <library name="IsTargetable" purpose="include_actions">
+      <actions>
+        <set_value name="$targetable" exact="false" />
+        <do_if value="$candidate != $ownShip">
+          <do_if value="$candidate.isplayerowned
+                     or ($candidate.isradarvisible and $candidate.distanceto.{player.entity} le $radar)
+                     or ($candidate.iscapitalship and $candidate.distanceto.{player.entity} le $farRadar)
+                     or $candidate.isclass.station
+                     or $candidate.isclass.gate
+                     or $candidate.isclass.highwayentrygate">
+            <set_value name="$targetable" exact="true" />
+          </do_if>
+        </do_if>
+      </actions>
+    </library>
+
+    <!--
+      Builds the distance-sorted candidate group $candidates for $mode.
+
+      There is exactly one fallback, and it stays strictly inside the category the
+      player asked for: a filtered surface mode that yields nothing widens to all
+      surface elements of the *same hull* (and downgrades $state accordingly), so
+      destroying the last engine leaves you cycling that hull's remaining elements
+      rather than dropping you out of surface mode entirely.
+
+      There is deliberately NO cross-category fallback. If the active filter has no
+      candidates, the group comes back empty and the caller reports failure - both
+      for acquisition and for Next/Previous. "Target nearest station" with no station
+      around, or Next while in station mode with none left, must never quietly hand
+      over an asteroid instead. Free mode ($mode == null) is not an exception to
+      this: its broad list is its own filter, not a substitute for someone else's.
+
+      Requires $config/$state/$ownShip/$radar/$farRadar to already be loaded.
+      -->
+    <library name="BuildCandidates" purpose="include_actions">
+      <actions>
+        <create_group groupname="$candidates" />
+
+        <do_if value="$mode == 'enemyAll'">
+          <find_object name="$found" class="[class.ship, class.controllable, class.explosive, class.mine, class.missile]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
+            <match owner="faction.player" negate="true" />
+          </find_object>
+          <do_all counter="$i" exact="$found.count">
+            <set_value name="$candidate" exact="$found.{$i}" />
+            <do_if value="$candidate.ishostileto.{faction.player}
+                      and ((($candidate.isknown or $candidate.iscapitalship) and $candidate.distanceto.{player.entity} le $farRadar)
+                           or $candidate.distanceto.{player.entity} le $radar)">
+              <add_to_group groupname="$candidates" object="$candidate" />
+            </do_if>
+          </do_all>
+        </do_if>
+
+        <do_elseif value="$mode == 'enemySmall'">
+          <find_ship name="$found" class="[class.ship_xs, class.ship_s, class.ship_m]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
+            <match owner="faction.player" negate="true" />
+          </find_ship>
+          <do_all counter="$i" exact="$found.count">
+            <set_value name="$candidate" exact="$found.{$i}" />
+            <do_if value="$candidate.ishostileto.{faction.player}
+                      and (($candidate.isknown and $candidate.distanceto.{player.entity} le $farRadar)
+                           or $candidate.distanceto.{player.entity} le $radar)">
+              <add_to_group groupname="$candidates" object="$candidate" />
+            </do_if>
+          </do_all>
+        </do_elseif>
+
+        <do_elseif value="$mode == 'enemyLarge'">
+          <find_ship name="$found" class="[class.ship_l, class.ship_xl]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
+            <match owner="faction.player" negate="true" />
+          </find_ship>
+          <do_all counter="$i" exact="$found.count">
+            <set_value name="$candidate" exact="$found.{$i}" />
+            <do_if value="$candidate.ishostileto.{faction.player} and $candidate.distanceto.{player.entity} le $farRadar">
+              <add_to_group groupname="$candidates" object="$candidate" />
+            </do_if>
+          </do_all>
+        </do_elseif>
+
+        <!-- Incoming only: a missile that is not aimed at the player is not a threat worth a key press. -->
+        <do_elseif value="$mode == 'missiles'">
+          <find_object name="$found" class="[class.missile]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
+            <match owner="faction.player" negate="true" />
+            <match_attention min="attention.visible" />
+          </find_object>
+          <do_all counter="$i" exact="$found.count">
+            <set_value name="$candidate" exact="$found.{$i}" />
+            <do_if value="$candidate.isknown and $candidate.target == $ownShip">
+              <add_to_group groupname="$candidates" object="$candidate" />
+            </do_if>
+          </do_all>
+        </do_elseif>
+
+        <do_elseif value="$mode == 'ownAll'">
+          <find_ship_by_true_owner name="$found" faction="faction.player" class="[class.ship_s, class.ship_m, class.ship_l, class.ship_xl]" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
+          <do_all counter="$i" exact="$found.count">
+            <do_if value="$found.{$i} != $ownShip">
+              <add_to_group groupname="$candidates" object="$found.{$i}" />
+            </do_if>
+          </do_all>
+        </do_elseif>
+
+        <!--
+          One find_dockingbay call per examined ship is not cheap, and this runs on
+          every Next/Previous press too - so only the $dockableScanLimit nearest own
+          ships are examined at all.
+          -->
+        <do_elseif value="$mode == 'ownDockable'">
+          <find_ship_by_true_owner name="$found" faction="faction.player" class="[class.ship_s, class.ship_m, class.ship_l, class.ship_xl]" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
+          <set_value name="$examined" exact="0" />
+          <do_all counter="$i" exact="$found.count">
+            <do_if value="$examined ge $config.$dockableScanLimit">
+              <break />
+            </do_if>
+            <do_if value="$found.{$i} != $ownShip">
+              <set_value name="$examined" exact="$examined + 1" />
+              <find_dockingbay name="$bays" multiple="true" object="$found.{$i}">
+                <match_dock size="$ownShip.docksize" allowplayeronly="true" />
+              </find_dockingbay>
+              <do_if value="$bays.count gt 0">
+                <add_to_group groupname="$candidates" object="$found.{$i}" />
+              </do_if>
+            </do_if>
+          </do_all>
+        </do_elseif>
+
+        <do_elseif value="$mode == 'stations'">
+          <find_station name="$found" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
+          <do_all counter="$i" exact="$found.count">
+            <do_if value="$found.{$i}.isknown">
+              <add_to_group groupname="$candidates" object="$found.{$i}" />
+            </do_if>
+          </do_all>
+        </do_elseif>
+
+        <do_elseif value="$mode == 'gates'">
+          <find_object name="$found" class="[class.highwayentrygate, class.gate]" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
+          <do_all counter="$i" exact="$found.count">
+            <do_if value="$found.{$i}.isknown">
+              <add_to_group groupname="$candidates" object="$found.{$i}" />
+            </do_if>
+          </do_all>
+        </do_elseif>
+
+        <do_elseif value="$mode == 'collectables'">
+          <find_object name="$found" class="[class.collectablewares, class.lockbox]" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
+          <do_all counter="$i" exact="$found.count">
+            <do_if value="$found.{$i}.isknown">
+              <add_to_group groupname="$candidates" object="$found.{$i}" />
+            </do_if>
+          </do_all>
+        </do_elseif>
+
+        <do_elseif value="$mode == 'asteroids'">
+          <find_object name="$found" class="[class.asteroid]" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
+          <do_all counter="$i" exact="$found.count">
+            <do_if value="$found.{$i}.isknown">
+              <add_to_group groupname="$candidates" object="$found.{$i}" />
+            </do_if>
+          </do_all>
+        </do_elseif>
+
+        <do_elseif value="$mode == 'surfaceAll' or $mode == 'surfaceEngines' or $mode == 'surfaceTurrets' or $mode == 'surfaceShields'">
+          <include_actions ref="ResolveSurfaceParent" />
+          <do_if value="$parent != null">
+            <do_if value="$mode == 'surfaceAll'">
+              <find_object_component groupname="$found" object="$parent" surfaceelement="true" checkoperational="true" indestructible="false" invulnerable="false" integrated="false" multiple="true" sortbydistanceto="player.entity" />
+            </do_if>
+            <do_else>
+              <do_if value="$mode == 'surfaceEngines'">
+                <set_value name="$surfaceClasses" exact="[class.engine]" />
+              </do_if>
+              <do_elseif value="$mode == 'surfaceTurrets'">
+                <set_value name="$surfaceClasses" exact="[class.turret, class.launcher]" />
+              </do_elseif>
+              <do_else>
+                <set_value name="$surfaceClasses" exact="[class.shieldgenerator]" />
+              </do_else>
+              <find_object_component groupname="$found" object="$parent" class="$surfaceClasses" surfaceelement="true" checkoperational="true" indestructible="false" invulnerable="false" integrated="false" multiple="true" sortbydistanceto="player.entity" />
+            </do_else>
+            <do_all counter="$i" exact="$found.count">
+              <do_if value="$found.{$i}.issurfaceelement and $found.{$i}.isoperational">
+                <add_to_group groupname="$candidates" object="$found.{$i}" />
+              </do_if>
+            </do_all>
+
+            <!-- Nothing of the requested type left on this hull: widen to every surface element it still has. -->
+            <do_if value="$candidates.count == 0 and $mode != 'surfaceAll'">
+              <set_value name="$mode" exact="'surfaceAll'" />
+              <set_value name="$state.$mode" exact="'surfaceAll'" />
+              <set_value name="$state.$surfaceMode" exact="'surfaceAll'" />
+              <find_object_component groupname="$found" object="$parent" surfaceelement="true" checkoperational="true" indestructible="false" invulnerable="false" integrated="false" multiple="true" sortbydistanceto="player.entity" />
+              <do_all counter="$i" exact="$found.count">
+                <do_if value="$found.{$i}.issurfaceelement and $found.{$i}.isoperational">
+                  <add_to_group groupname="$candidates" object="$found.{$i}" />
+                </do_if>
+              </do_all>
+            </do_if>
+          </do_if>
+        </do_elseif>
+
+        <!--
+          Free mode ($mode == null): no filter is active, so everything visible and
+          known is a candidate. This is free mode's OWN list, not a fallback - an
+          active filter that comes up empty deliberately stays empty, so the hotkey
+          reports failure instead of quietly substituting a different kind of object.
+          -->
+        <do_else>
+          <find_object name="$found" class="[class.ship, class.station, class.highwayentrygate, class.gate, class.collectablewares, class.asteroid, class.missile, class.mine, class.explosive, class.lockbox, class.navbeacon, class.resourceprobe, class.satellite]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
+            <match_attention min="attention.visible" />
+          </find_object>
+          <do_all counter="$i" exact="$found.count">
+            <do_if value="$found.{$i}.isknown and $found.{$i} != $ownShip">
+              <add_to_group groupname="$candidates" object="$found.{$i}" />
+            </do_if>
+          </do_all>
+        </do_else>
+      </actions>
+    </library>
+
+    <!--
+      Applies $thing as the player's target (or reports failure when it is null),
+      and keeps the surface-element bookkeeping in $state in sync.
+
+      $targetingBackend picks how the target is actually set. 'lua' (the default)
+      routes through ui/advanced_targeting_hotkeys.lua's C.SetSofttarget, which is
+      what vanilla itself uses for component slots and therefore also works for
+      surface elements. 'md' uses the native <set_player_target> instead - fewer
+      moving parts, but unproven for surface elements, so it is opt-in.
+      -->
+    <library name="ApplyTarget" purpose="include_actions">
+      <actions>
+        <do_if value="$thing != null">
+          <set_value name="$state.$selfChange" exact="true" />
+          <do_if value="$config.$targetingBackend == 'md'">
+            <set_player_target object="$thing" />
+          </do_if>
+          <do_else>
+            <raise_lua_event name="'AdvancedTargetingHotkeys.SetTarget'" param="$thing" />
+          </do_else>
+          <do_if value="$thing.issurfaceelement">
+            <set_value name="$state.$surfaceTarget" exact="$thing" />
+            <set_value name="$state.$surfaceParent" exact="$thing.parent" />
+          </do_if>
+          <do_else>
+            <set_value name="$state.$surfaceTarget" exact="null" />
+          </do_else>
+          <do_if value="$config.$soundEnabled">
+            <play_sound sound="'ui_target_set'" type="ui" />
+          </do_if>
+        </do_if>
+        <do_else>
+          <!--
+            Nothing matched. The target is left exactly as it was - no substitute
+            pick - and the player is told which category came up empty, so a silent
+            "the key did nothing" is never ambiguous.
+            -->
+          <do_if value="$config.$soundEnabled">
+            <play_sound sound="'ui_target_set_fail'" type="ui" />
+          </do_if>
+          <do_if value="$config.$notifyOnFailure">
+            <include_actions ref="ResolveModeName" />
+            <do_if value="$nameId != 0">
+              <show_notification text="{1972092437, 2001}.[{1972092437, $nameId}]" />
+            </do_if>
+            <do_else>
+              <show_notification text="{1972092437, 2002}" />
+            </do_else>
+          </do_if>
+        </do_else>
+      </actions>
+    </library>
+
+    <!--
+      Runtime state is deliberately not carried across a load: a remembered hull or
+      surface element from another session is meaningless, and starting in free mode
+      is always a valid state.
+      -->
+    <cue name="Init_State" instantiate="true">
+      <conditions>
+        <check_any>
+          <event_game_loaded />
+          <event_game_started />
+          <event_cue_signalled />
+        </check_any>
+      </conditions>
+      <actions>
+        <set_value name="player.entity.$AdvancedTargetingHotkeysState" exact="null" />
+        <include_actions ref="LoadState" />
+      </actions>
+    </cue>
+
+    <!--
+      Registrations must be re-sent on every Reloaded, since cue references do not
+      survive a Lua reload. Group toggles gate registration itself rather than
+      execution: a disabled group never claims one of the API's 48 shared pool
+      slots in the first place.
+      -->
+    <cue name="Register_On_Reloaded" instantiate="true">
+      <conditions>
+        <event_cue_signalled cue="md.HotkeyApi.Reloaded" />
+      </conditions>
+      <actions>
+        <include_actions ref="LoadConfig" />
+        <include_actions ref="LoadState" />
+
+        <!-- Navigation and utility - always available, they are what makes the modes usable. -->
+        <signal_cue_instantly
+          cue="md.HotkeyApi.Register_Action"
+          param="table[
+            $id               = 'ath_target_next',
+            $area             = 'pilot',
+            $isObjectRequired = false,
+            $name             = {1972092437, 1015},
+            $version          = 1,
+            $actionCue        = Cycle_Target_Cue,
+          ]" />
+        <signal_cue_instantly
+          cue="md.HotkeyApi.Register_Action"
+          param="table[
+            $id               = 'ath_target_prev',
+            $area             = 'pilot',
+            $isObjectRequired = false,
+            $name             = {1972092437, 1016},
+            $version          = 1,
+            $actionCue        = Cycle_Target_Cue,
+          ]" />
+        <signal_cue_instantly
+          cue="md.HotkeyApi.Register_Action"
+          param="table[
+            $id               = 'ath_target_none',
+            $area             = 'pilot',
+            $isObjectRequired = false,
+            $name             = {1972092437, 1017},
+            $version          = 1,
+            $actionCue        = Clear_Target_Cue,
+          ]" />
+        <signal_cue_instantly
+          cue="md.HotkeyApi.Register_Action"
+          param="table[
+            $id               = 'ath_target_line_of_sight',
+            $area             = 'pilot',
+            $isObjectRequired = false,
+            $name             = {1972092437, 1018},
+            $version          = 1,
+            $actionCue        = Line_Of_Sight_Cue,
+          ]" />
+
+        <do_if value="$config.$groupCombatEnabled">
+          <signal_cue_instantly
+            cue="md.HotkeyApi.Register_Action"
+            param="table[
+              $id               = 'ath_target_enemy',
+              $area             = 'pilot',
+              $isObjectRequired = false,
+              $name             = {1972092437, 1001},
+              $version          = 1,
+              $actionCue        = Acquire_Target_Cue,
+            ]" />
+          <signal_cue_instantly
+            cue="md.HotkeyApi.Register_Action"
+            param="table[
+              $id               = 'ath_target_enemy_small',
+              $area             = 'pilot',
+              $isObjectRequired = false,
+              $name             = {1972092437, 1002},
+              $version          = 1,
+              $actionCue        = Acquire_Target_Cue,
+            ]" />
+          <signal_cue_instantly
+            cue="md.HotkeyApi.Register_Action"
+            param="table[
+              $id               = 'ath_target_enemy_large',
+              $area             = 'pilot',
+              $isObjectRequired = false,
+              $name             = {1972092437, 1003},
+              $version          = 1,
+              $actionCue        = Acquire_Target_Cue,
+            ]" />
+          <signal_cue_instantly
+            cue="md.HotkeyApi.Register_Action"
+            param="table[
+              $id               = 'ath_target_missile',
+              $area             = 'pilot',
+              $isObjectRequired = false,
+              $name             = {1972092437, 1004},
+              $version          = 1,
+              $actionCue        = Acquire_Target_Cue,
+            ]" />
+        </do_if>
+
+        <do_if value="$config.$groupFleetEnabled">
+          <signal_cue_instantly
+            cue="md.HotkeyApi.Register_Action"
+            param="table[
+              $id               = 'ath_target_own_ship',
+              $area             = 'pilot',
+              $isObjectRequired = false,
+              $name             = {1972092437, 1005},
+              $version          = 1,
+              $actionCue        = Acquire_Target_Cue,
+            ]" />
+          <signal_cue_instantly
+            cue="md.HotkeyApi.Register_Action"
+            param="table[
+              $id               = 'ath_target_own_dockable',
+              $area             = 'pilot',
+              $isObjectRequired = false,
+              $name             = {1972092437, 1006},
+              $version          = 1,
+              $actionCue        = Acquire_Target_Cue,
+            ]" />
+        </do_if>
+
+        <do_if value="$config.$groupNavigationEnabled">
+          <signal_cue_instantly
+            cue="md.HotkeyApi.Register_Action"
+            param="table[
+              $id               = 'ath_target_station',
+              $area             = 'pilot',
+              $isObjectRequired = false,
+              $name             = {1972092437, 1007},
+              $version          = 1,
+              $actionCue        = Acquire_Target_Cue,
+            ]" />
+          <signal_cue_instantly
+            cue="md.HotkeyApi.Register_Action"
+            param="table[
+              $id               = 'ath_target_gate',
+              $area             = 'pilot',
+              $isObjectRequired = false,
+              $name             = {1972092437, 1008},
+              $version          = 1,
+              $actionCue        = Acquire_Target_Cue,
+            ]" />
+        </do_if>
+
+        <do_if value="$config.$groupResourcesEnabled">
+          <signal_cue_instantly
+            cue="md.HotkeyApi.Register_Action"
+            param="table[
+              $id               = 'ath_target_collectable',
+              $area             = 'pilot',
+              $isObjectRequired = false,
+              $name             = {1972092437, 1009},
+              $version          = 1,
+              $actionCue        = Acquire_Target_Cue,
+            ]" />
+          <signal_cue_instantly
+            cue="md.HotkeyApi.Register_Action"
+            param="table[
+              $id               = 'ath_target_asteroid',
+              $area             = 'pilot',
+              $isObjectRequired = false,
+              $name             = {1972092437, 1010},
+              $version          = 1,
+              $actionCue        = Acquire_Target_Cue,
+            ]" />
+        </do_if>
+
+        <do_if value="$config.$groupSurfaceEnabled">
+          <signal_cue_instantly
+            cue="md.HotkeyApi.Register_Action"
+            param="table[
+              $id               = 'ath_target_surface',
+              $area             = 'pilot',
+              $isObjectRequired = false,
+              $name             = {1972092437, 1011},
+              $version          = 1,
+              $actionCue        = Acquire_Target_Cue,
+            ]" />
+          <signal_cue_instantly
+            cue="md.HotkeyApi.Register_Action"
+            param="table[
+              $id               = 'ath_target_surface_engine',
+              $area             = 'pilot',
+              $isObjectRequired = false,
+              $name             = {1972092437, 1012},
+              $version          = 1,
+              $actionCue        = Acquire_Target_Cue,
+            ]" />
+          <signal_cue_instantly
+            cue="md.HotkeyApi.Register_Action"
+            param="table[
+              $id               = 'ath_target_surface_turret',
+              $area             = 'pilot',
+              $isObjectRequired = false,
+              $name             = {1972092437, 1013},
+              $version          = 1,
+              $actionCue        = Acquire_Target_Cue,
+            ]" />
+          <signal_cue_instantly
+            cue="md.HotkeyApi.Register_Action"
+            param="table[
+              $id               = 'ath_target_surface_shield',
+              $area             = 'pilot',
+              $isObjectRequired = false,
+              $name             = {1972092437, 1014},
+              $version          = 1,
+              $actionCue        = Acquire_Target_Cue,
+            ]" />
+        </do_if>
+
+        <do_if value="$config.$groupMissionEnabled">
+          <signal_cue_instantly
+            cue="md.HotkeyApi.Register_Action"
+            param="table[
+              $id               = 'ath_target_mission',
+              $area             = 'pilot',
+              $isObjectRequired = false,
+              $name             = {1972092437, 1019},
+              $version          = 1,
+              $actionCue        = Acquire_Target_Cue,
+            ]" />
+        </do_if>
+
+        <remove_value name="$config" />
+        <remove_value name="$state" />
+      </actions>
+    </cue>
+
+    <!--
+      Every "target nearest X" hotkey, plus the mission-object one. Which one fired
+      is read from event.param.$id, so one cue covers all fifteen ids.
+      -->
+    <cue name="Acquire_Target_Cue" instantiate="true" namespace="this">
+      <conditions>
+        <event_cue_signalled />
+      </conditions>
+      <actions>
+        <include_actions ref="LoadConfig" />
+        <include_actions ref="LoadState" />
+        <include_actions ref="LoadShipContext" />
+        <set_value name="$id" exact="event.param.$id" />
+        <include_actions ref="ResolveMode" />
+        <set_value name="$thing" exact="null" />
+
+        <do_if value="$mode == 'mission'">
+          <set_value name="$thing" exact="@player.activemissionwaypoint.entity" />
+          <include_actions ref="ApplyTarget" />
+          <!-- A mission object is a one-off pick, not a category worth cycling. -->
+          <do_if value="$thing != null">
+            <include_actions ref="ResetMode" />
+          </do_if>
+        </do_if>
+        <do_else>
+          <include_actions ref="BuildCandidates" />
+          <do_if value="$candidates.count gt 0">
+            <set_value name="$thing" exact="$candidates.{1}" />
+          </do_if>
+          <include_actions ref="ApplyTarget" />
+          <do_if value="$thing != null">
+            <!--
+              BuildCandidates may have downgraded $mode (filtered surface mode with
+              nothing left), so $mode is read back here rather than reusing the id.
+              -->
+            <set_value name="$state.$mode" exact="$mode" />
+            <include_actions ref="IsSurfaceMode" />
+            <do_if value="$isSurfaceMode">
+              <set_value name="$state.$surfaceMode" exact="$mode" />
+            </do_if>
+          </do_if>
+        </do_else>
+      </actions>
+    </cue>
+
+    <!--
+      Next / Previous. Both rebuild the active mode's list and step through it, so
+      the list always reflects the current situation rather than a stale snapshot.
+      -->
+    <cue name="Cycle_Target_Cue" instantiate="true" namespace="this">
+      <conditions>
+        <event_cue_signalled />
+      </conditions>
+      <actions>
+        <include_actions ref="LoadConfig" />
+        <include_actions ref="LoadState" />
+        <include_actions ref="LoadShipContext" />
+        <set_value name="$id" exact="event.param.$id" />
+        <set_value name="$mode" exact="$state.$mode" />
+        <do_if value="not $config.$stickyModeEnabled">
+          <set_value name="$mode" exact="null" />
+        </do_if>
+        <include_actions ref="BuildCandidates" />
+
+        <set_value name="$thing" exact="null" />
+        <do_if value="$candidates.count gt 0">
+          <!-- indexof yields 0 when the current target is not part of this mode's list. -->
+          <set_value name="$index" exact="0" />
+          <do_if value="player.target != null">
+            <set_value name="$index" exact="$candidates.indexof.{player.target}" />
+          </do_if>
+          <do_if value="$id == 'ath_target_prev'">
+            <do_if value="player.target == null">
+              <set_value name="$index" exact="$candidates.count + 1" />
+            </do_if>
+            <do_if value="$index gt 1">
+              <set_value name="$thing" exact="$candidates.{$index - 1}" />
+            </do_if>
+            <do_else>
+              <set_value name="$thing" exact="$candidates.{$candidates.count}" />
+            </do_else>
+          </do_if>
+          <do_else>
+            <do_if value="$index lt $candidates.count">
+              <set_value name="$thing" exact="$candidates.{$index + 1}" />
+            </do_if>
+            <do_else>
+              <set_value name="$thing" exact="$candidates.{1}" />
+            </do_else>
+          </do_else>
+        </do_if>
+
+        <include_actions ref="ApplyTarget" />
+        <do_if value="$thing != null">
+          <set_value name="$state.$mode" exact="$mode" />
+        </do_if>
+      </actions>
+    </cue>
+
+    <!--
+      Deselect. Unlike vanilla's own Deselect Target this also drops the sticky
+      mode, which is the whole reason it exists as a separate hotkey.
+      -->
+    <cue name="Clear_Target_Cue" instantiate="true" namespace="this">
+      <conditions>
+        <event_cue_signalled />
+      </conditions>
+      <actions>
+        <include_actions ref="LoadConfig" />
+        <include_actions ref="LoadState" />
+        <do_if value="$config.$targetingBackend == 'md'">
+          <clear_player_target />
+        </do_if>
+        <do_else>
+          <raise_lua_event name="'AdvancedTargetingHotkeys.ClearTarget'" />
+        </do_else>
+        <include_actions ref="ResetMode" />
+        <!-- We have already reset everything; stop On_Target_Changed doing it again. -->
+        <set_value name="$state.$selfChange" exact="true" />
+      </actions>
+    </cue>
+
+    <!--
+      Line-of-sight pick: start dead centre and widen the cone in steps until
+      something is found, so a target actually under the crosshair always wins over
+      one merely somewhere ahead of the ship.
+
+      Surface elements get their own sweep per step, with a distance cap that
+      shrinks as the cone widens - a wide cone at long range would otherwise pick a
+      random turret on a distant station over the ship you are looking at.
+      $surfaceRanges entry 0m means "no surface sweep at this angle".
+      -->
+    <cue name="Line_Of_Sight_Cue" instantiate="true" namespace="this">
+      <conditions>
+        <event_cue_signalled />
+      </conditions>
+      <actions>
+        <include_actions ref="LoadConfig" />
+        <include_actions ref="LoadState" />
+        <include_actions ref="LoadShipContext" />
+
+        <!-- Not a filtered mode: whatever is under the crosshair wins, whatever it is.
+             ApplyTarget reads $mode when reporting failure, so it has to be set. -->
+        <set_value name="$mode" exact="null" />
+        <set_value name="$angles" exact="[1deg, 3deg, 5deg, 10deg, 25deg]" />
+        <set_value name="$surfaceRanges" exact="[8km, 4km, 2km, 0m, 1km]" />
+        <set_value name="$thing" exact="null" />
+
+        <do_all counter="$pass" exact="$angles.count">
+          <set_value name="$angle" exact="$angles.{$pass}" />
+          <set_value name="$surfaceRange" exact="$surfaceRanges.{$pass}" />
+
+          <do_if value="$surfaceRange gt 0m">
+            <find_object name="$hulls" class="[class.ship_l, class.ship_xl, class.station]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
+              <match_attention min="attention.visible" />
+            </find_object>
+            <do_all counter="$i" exact="$hulls.count">
+              <do_if value="$hulls.{$i} != $ownShip">
+                <find_object_component groupname="$components" object="$hulls.{$i}" surfaceelement="true" checkoperational="true" indestructible="false" invulnerable="false" integrated="false" multiple="true" sortbydistanceto="player.entity">
+                  <match_is_in_view_of object="$ownShip" vertical="$angle" horizontal="$angle" />
+                </find_object_component>
+                <do_all counter="$j" exact="$components.count">
+                  <do_if value="$components.{$j}.isoperational and $components.{$j}.distanceto.{player.entity} lt $surfaceRange">
+                    <set_value name="$thing" exact="$components.{$j}" />
+                    <break />
+                  </do_if>
+                </do_all>
+              </do_if>
+              <do_if value="$thing != null">
+                <break />
+              </do_if>
+            </do_all>
+          </do_if>
+
+          <do_if value="$thing == null">
+            <find_object name="$found" class="[class.ship, class.station, class.highwayentrygate, class.gate, class.collectablewares, class.asteroid, class.missile, class.mine, class.explosive, class.lockbox, class.navbeacon, class.resourceprobe, class.satellite]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
+              <match_is_in_view_of object="$ownShip" vertical="$angle" horizontal="$angle" />
+            </find_object>
+            <do_all counter="$i" exact="$found.count">
+              <set_value name="$candidate" exact="$found.{$i}" />
+              <include_actions ref="IsTargetable" />
+              <do_if value="$targetable">
+                <set_value name="$thing" exact="$candidate" />
+                <break />
+              </do_if>
+            </do_all>
+          </do_if>
+
+          <do_if value="$thing != null">
+            <break />
+          </do_if>
+        </do_all>
+
+        <include_actions ref="ApplyTarget" />
+        <do_if value="$thing != null">
+          <do_if value="$thing.issurfaceelement">
+            <do_if value="$state.$surfaceMode == null">
+              <set_value name="$state.$surfaceMode" exact="'surfaceAll'" />
+            </do_if>
+            <set_value name="$state.$mode" exact="$state.$surfaceMode" />
+          </do_if>
+          <do_else>
+            <include_actions ref="ResetMode" />
+          </do_else>
+          <!-- Same "unknown object" callout the game gives for anything unidentified. -->
+          <do_if value="$config.$soundEnabled and not $thing.isknown">
+            <speak actor="player.computer" page="10002" line="201" priority="90" />
+          </do_if>
+        </do_if>
+      </actions>
+    </cue>
+
+    <!--
+      Sticky-mode invalidation. Anything that changes the target without going
+      through this mod (mouse click, a vanilla targeting hotkey, the target being
+      destroyed or leaving the sector) drops the filter, so Next/Previous go back to
+      cycling everything instead of silently staying in a mode the player has left.
+
+      The one exception: losing a surface element keeps surface mode alive, so
+      chewing through a hull for boarding does not kick you out of it after each
+      kill - BuildCandidates then re-picks from whatever the hull still has.
+      -->
+    <cue name="On_Target_Changed" instantiate="true" namespace="this">
+      <conditions>
+        <event_player_changed_target />
+      </conditions>
+      <actions>
+        <include_actions ref="LoadState" />
+        <do_if value="$state.$selfChange">
+          <set_value name="$state.$selfChange" exact="false" />
+        </do_if>
+        <do_else>
+          <do_if value="event.param == null">
+            <do_if value="$state.$surfaceTarget != null and $state.$surfaceParent != null">
+              <set_value name="$state.$surfaceTarget" exact="null" />
+              <do_if value="$state.$surfaceMode != null">
+                <set_value name="$state.$mode" exact="$state.$surfaceMode" />
+              </do_if>
+            </do_if>
+            <do_else>
+              <include_actions ref="ResetMode" />
+            </do_else>
+          </do_if>
+          <do_elseif value="event.param.issurfaceelement">
+            <do_if value="$state.$surfaceMode == null">
+              <set_value name="$state.$surfaceMode" exact="'surfaceAll'" />
+            </do_if>
+            <set_value name="$state.$mode" exact="$state.$surfaceMode" />
+            <set_value name="$state.$surfaceParent" exact="event.param.parent" />
+            <set_value name="$state.$surfaceTarget" exact="event.param" />
+          </do_elseif>
+          <do_else>
+            <include_actions ref="ResetMode" />
+          </do_else>
+        </do_else>
+      </actions>
+    </cue>
+
+  </cues>
+</mdscript>

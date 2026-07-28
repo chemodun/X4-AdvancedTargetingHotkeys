@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Advanced Targeting Hotkeys - French text, page 1972092437 -->
+<diff>
+  <add sel="/language">
+    <page id="1972092437" title="Raccourcis de ciblage avancé" descr="" voice="no">
+      <!-- mod identity -->
+      <t id="1">Raccourcis de ciblage avancé</t>
+      <t id="2">Raccourcis de ciblage filtré basés sur l'API native de raccourcis.</t>
+      <!-- acquisition - combat -->
+      <t id="1001">Cibler l'ennemi le plus proche</t>
+      <t id="1002">Cibler l'ennemi le plus proche \(XS-M\)</t>
+      <t id="1003">Cibler l'ennemi le plus proche \(L-XL\)</t>
+      <t id="1004">Cibler le missile entrant le plus proche</t>
+      <!-- acquisition - own fleet -->
+      <t id="1005">Cibler le vaisseau allié le plus proche</t>
+      <t id="1006">Cibler le vaisseau allié le plus proche pour atterrir</t>
+      <!-- acquisition - navigation -->
+      <t id="1007">Cibler la station la plus proche</t>
+      <t id="1008">Cibler la porte la plus proche</t>
+      <!-- acquisition - resources -->
+      <t id="1009">Cibler l'objet récupérable le plus proche</t>
+      <t id="1010">Cibler l'astéroïde le plus proche</t>
+      <!-- acquisition - surface elements -->
+      <t id="1011">Cibler l'élément de surface le plus proche</t>
+      <t id="1012">Cibler le moteur le plus proche</t>
+      <t id="1013">Cibler la tourelle la plus proche</t>
+      <t id="1014">Cibler le générateur de bouclier le plus proche</t>
+      <!-- navigation and utility -->
+      <t id="1015">Cible suivante \(filtrée\)</t>
+      <t id="1016">Cible précédente \(filtrée\)</t>
+      <t id="1017">Désélectionner la cible et réinitialiser le filtre</t>
+      <t id="1018">Cibler dans la ligne de mire</t>
+      <!-- acquisition - mission -->
+      <t id="1019">Cibler l'objectif de mission actif</t>
+      <!-- status messages -->
+      <t id="2001">%s : aucune cible correspondante</t>
+      <t id="2002">Aucune cible correspondante</t>
+    </page>
+  </add>
+</diff>

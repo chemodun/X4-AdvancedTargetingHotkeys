@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<content
+  id="advanced_targeting_hotkeys"
+  name="Advanced Targeting Hotkeys"
+  author="Chem O`Dun"
+  version="100"
+  date="2026-07-28"
+  save="false"
+  sync="false"
+  enabled="true"
+  description="Filtered targeting hotkeys built on the Native Hotkey API: acquire the nearest enemy by size, incoming missile, own ship, dockable own ship, station, gate, collectable, asteroid or surface element (engines/turrets/shields), then cycle only within that filter. Includes a widening-cone line-of-sight pick.">
+  <text language="7"
+    description="Filtered targeting hotkeys built on the Native Hotkey API: acquire the nearest enemy by size, incoming missile, own ship, dockable own ship, station, gate, collectable, asteroid or surface element (engines/turrets/shields), then cycle only within that filter. Includes a widening-cone line-of-sight pick."></text>
+  <!-- French -->
+  <text language="33"
+    description="Raccourcis de ciblage filtré basés sur l'API native de raccourcis : acquérir l'ennemi le plus proche par taille, le missile entrant, votre vaisseau, un vaisseau où atterrir, une station, une porte, un objet récupérable, un astéroïde ou un élément de surface (moteurs/tourelles/boucliers), puis parcourir uniquement ce filtre. Inclut une sélection en ligne de mire à cône élargi."></text>
+  <!-- Spanish -->
+  <text language="34"
+    description="Teclas rápidas de selección filtrada basadas en la API nativa de teclas rápidas: fija el enemigo más cercano por tamaño, el misil entrante, tu nave, una nave donde aterrizar, una estación, una puerta, un objeto recolectable, un asteroide o un elemento de superficie (motores/torretas/escudos), y luego recorre solo ese filtro. Incluye una selección en línea de visión de cono creciente."></text>
+  <!-- Italian -->
+  <text language="39"
+    description="Tasti di scelta rapida di mira filtrata basati sull'API nativa dei tasti di scelta rapida: aggancia il nemico più vicino per dimensione, il missile in arrivo, una tua nave, una nave su cui atterrare, una stazione, un portale, un oggetto raccoglibile, un asteroide o un elemento di superficie (motori/torrette/scudi), poi scorri solo quel filtro. Include una selezione in linea di vista a cono crescente."></text>
+  <!-- Czech -->
+  <text language="42"
+    description="Klávesové zkratky pro filtrované zaměřování založené na nativním Hotkey API: zaměř nejbližšího nepřítele podle velikosti, přilétající raketu, vlastní loď, loď k přistání, stanici, bránu, sběratelný objekt, asteroid nebo povrchový prvek (motory/věže/štíty) a poté procházej pouze tímto filtrem. Obsahuje výběr v přímé linii pohledu s rozšiřujícím se kuželem."></text>
+  <!-- English -->
+  <text language="44"
+    description="Filtered targeting hotkeys built on the Native Hotkey API: acquire the nearest enemy by size, incoming missile, own ship, dockable own ship, station, gate, collectable, asteroid or surface element (engines/turrets/shields), then cycle only within that filter. Includes a widening-cone line-of-sight pick."></text>
+  <!-- Polish -->
+  <text language="48"
+    description="Skróty klawiszowe filtrowanego namierzania oparte na natywnym API skrótów: namierz najbliższego wroga wg rozmiaru, nadlatujący pocisk, własny statek, statek do lądowania, stację, bramę, przedmiot do zebrania, asteroidę lub element powierzchni (silniki/wieżyczki/tarcze), a następnie przełączaj się tylko w obrębie tego filtru. Zawiera wybór w linii wzroku o poszerzającym się stożku."></text>
+  <!-- German -->
+  <text language="49"
+    description="Gefilterte Zielerfassungs-Hotkeys auf Basis der nativen Hotkey-API: erfasse den nächsten Feind nach Größe, eine anfliegende Rakete, ein eigenes Schiff, ein Landeschiff, eine Station, ein Tor, ein Sammelobjekt, einen Asteroiden oder ein Oberflächenelement (Triebwerke/Geschütze/Schilde) und blättere dann nur innerhalb dieses Filters. Enthält eine Sichtlinien-Auswahl mit sich weitendem Kegel."></text>
+  <!-- Portuguese -->
+  <text language="55"
+    description="Teclas de atalho de seleção filtrada baseadas na API nativa de teclas de atalho: fixe o inimigo mais próximo por tamanho, o míssil que se aproxima, uma nave sua, uma nave para pousar, uma estação, um portal, um objeto coletável, um asteroide ou um elemento de superfície (motores/torres/escudos) e depois percorra apenas esse filtro. Inclui uma seleção em linha de visão com cone crescente."></text>
+  <!-- Japanese -->
+  <text language="81"
+    description="ネイティブホットキーAPIを基にした、絞り込みターゲティングのホットキー集：サイズ別の最寄りの敵、飛来ミサイル、自艦隊の船、着艦可能な船、ステーション、ゲート、回収物、小惑星、または表面要素（エンジン／砲塔／シールド）を捕捉し、その絞り込み内だけを巡回します。視線方向へ円錐を広げていくターゲット選択も含みます。"></text>
+  <!-- Korean -->
+  <text language="82"
+    description="네이티브 단축키 API를 기반으로 한 필터 조준 단축키 모음: 크기별 최근접 적, 날아오는 미사일, 아군 함선, 착함 가능한 함선, 정거장, 게이트, 수집물, 소행성 또는 표면 요소(엔진/터렛/실드)를 지정한 뒤 해당 필터 안에서만 순환합니다. 시야 방향으로 원뿔을 넓혀가는 조준 선택도 포함합니다."></text>
+  <!-- Chinese Simplified -->
+  <text language="86"
+    description="基于原生热键API的筛选式锁定热键：按体型锁定最近的敌人、来袭导弹、自有舰船、可停靠舰船、空间站、跳跃门、可回收物、小行星或表面部件（引擎／炮塔／护盾），随后只在该筛选范围内循环切换。另含逐步扩大锥角的视线锁定。"></text>
+  <!-- Chinese Traditional -->
+  <text language="88"
+    description="基於原生熱鍵API的篩選式鎖定熱鍵：按體型鎖定最近的敵人、來襲飛彈、自有艦船、可停靠艦船、太空站、躍遷門、可回收物、小行星或表面部件（引擎／砲塔／護盾），隨後只在該篩選範圍內循環切換。另含逐步擴大錐角的視線鎖定。"></text>
+  <!-- Turkish -->
+  <text language="90"
+    description="Yerel Kısayol Tuşu API'si üzerine kurulu filtreli hedefleme kısayolları: boyuta göre en yakın düşmanı, gelen füzeyi, kendi geminizi, inilebilir bir gemiyi, bir istasyonu, bir geçidi, toplanabilir bir nesneyi, bir asteroidi veya bir yüzey bileşenini (motorlar/taretler/kalkanlar) hedefleyin, ardından yalnızca o filtre içinde gezinin. Genişleyen konili görüş hattı seçimi de içerir."></text>
+  <!-- Bulgarian -->
+  <text language="359"
+    description="Клавишни комбинации за филтрирано насочване, базирани на родния API за горещи клавиши: захвани най-близкия враг по размер, приближаваща ракета, свой кораб, кораб за кацане, станция, портал, събираем обект, астероид или повърхностен елемент (двигатели/оръдейни кули/щитове), след което превърташ само в рамките на този филтър. Включва избор по линия на видимост с разширяващ се конус."></text>
+  <!-- Ukrainian -->
+  <text language="380"
+    description="Гарячі клавіші фільтрованого захоплення цілі на основі рідного Hotkey API: захопи найближчого ворога за розміром, ракету на підльоті, власний корабель, корабель для посадки, станцію, ворота, збиральний об'єкт, астероїд або поверхневий елемент (двигуни/турелі/щити), а потім гортай лише в межах цього фільтра. Містить вибір по лінії зору з конусом, що розширюється."></text>
+  <dependency version="800"></dependency>
+  <dependency id="ws_3750545906" optional="false" name="Native Hotkey API" version="80007"></dependency>
+</content>

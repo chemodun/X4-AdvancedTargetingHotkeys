@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Advanced Targeting Hotkeys - Korean text, page 1972092437 -->
+<diff>
+  <add sel="/language">
+    <page id="1972092437" title="고급 조준 단축키" descr="" voice="no">
+      <!-- mod identity -->
+      <t id="1">고급 조준 단축키</t>
+      <t id="2">네이티브 단축키 API를 기반으로 한 필터 조준 단축키 모음.</t>
+      <!-- acquisition - combat -->
+      <t id="1001">가장 가까운 적 지정</t>
+      <t id="1002">가장 가까운 적 지정 \(XS-M\)</t>
+      <t id="1003">가장 가까운 적 지정 \(L-XL\)</t>
+      <t id="1004">가장 가까운 날아오는 미사일 지정</t>
+      <!-- acquisition - own fleet -->
+      <t id="1005">가장 가까운 아군 함선 지정</t>
+      <t id="1006">착함 가능한 가장 가까운 아군 함선 지정</t>
+      <!-- acquisition - navigation -->
+      <t id="1007">가장 가까운 정거장 지정</t>
+      <t id="1008">가장 가까운 게이트 지정</t>
+      <!-- acquisition - resources -->
+      <t id="1009">가장 가까운 수집물 지정</t>
+      <t id="1010">가장 가까운 소행성 지정</t>
+      <!-- acquisition - surface elements -->
+      <t id="1011">가장 가까운 표면 요소 지정</t>
+      <t id="1012">가장 가까운 엔진 지정</t>
+      <t id="1013">가장 가까운 터렛 지정</t>
+      <t id="1014">가장 가까운 실드 발생기 지정</t>
+      <!-- navigation and utility -->
+      <t id="1015">다음 목표 \(필터\)</t>
+      <t id="1016">이전 목표 \(필터\)</t>
+      <t id="1017">목표 해제 및 필터 초기화</t>
+      <t id="1018">시야 방향 목표 지정</t>
+      <!-- acquisition - mission -->
+      <t id="1019">진행 중인 임무 목표 지정</t>
+      <!-- status messages -->
+      <t id="2001">%s: 해당하는 목표를 찾지 못했습니다</t>
+      <t id="2002">해당하는 목표를 찾지 못했습니다</t>
+    </page>
+  </add>
+</diff>

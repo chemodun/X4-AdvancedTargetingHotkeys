@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Advanced Targeting Hotkeys - Spanish text, page 1972092437 -->
+<diff>
+  <add sel="/language">
+    <page id="1972092437" title="Teclas de selección avanzada de objetivos" descr="" voice="no">
+      <!-- mod identity -->
+      <t id="1">Teclas de selección avanzada de objetivos</t>
+      <t id="2">Teclas rápidas de selección filtrada basadas en la API nativa de teclas rápidas.</t>
+      <!-- acquisition - combat -->
+      <t id="1001">Fijar el enemigo más cercano</t>
+      <t id="1002">Fijar el enemigo más cercano \(XS-M\)</t>
+      <t id="1003">Fijar el enemigo más cercano \(L-XL\)</t>
+      <t id="1004">Fijar el misil entrante más cercano</t>
+      <!-- acquisition - own fleet -->
+      <t id="1005">Fijar la nave propia más cercana</t>
+      <t id="1006">Fijar la nave propia más cercana para aterrizar</t>
+      <!-- acquisition - navigation -->
+      <t id="1007">Fijar la estación más cercana</t>
+      <t id="1008">Fijar la puerta más cercana</t>
+      <!-- acquisition - resources -->
+      <t id="1009">Fijar el objeto recolectable más cercano</t>
+      <t id="1010">Fijar el asteroide más cercano</t>
+      <!-- acquisition - surface elements -->
+      <t id="1011">Fijar el elemento de superficie más cercano</t>
+      <t id="1012">Fijar el motor más cercano</t>
+      <t id="1013">Fijar la torreta más cercana</t>
+      <t id="1014">Fijar el generador de escudo más cercano</t>
+      <!-- navigation and utility -->
+      <t id="1015">Objetivo siguiente \(filtrado\)</t>
+      <t id="1016">Objetivo anterior \(filtrado\)</t>
+      <t id="1017">Deseleccionar objetivo y reiniciar filtro</t>
+      <t id="1018">Fijar objetivo en la línea de visión</t>
+      <!-- acquisition - mission -->
+      <t id="1019">Fijar objeto de misión activo</t>
+      <!-- status messages -->
+      <t id="2001">%s: no se encontró ningún objetivo</t>
+      <t id="2002">No se encontró ningún objetivo</t>
+    </page>
+  </add>
+</diff>

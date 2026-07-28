@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Advanced Targeting Hotkeys - Chinese Traditional text, page 1972092437 -->
+<diff>
+  <add sel="/language">
+    <page id="1972092437" title="高級鎖定熱鍵" descr="" voice="no">
+      <!-- mod identity -->
+      <t id="1">高級鎖定熱鍵</t>
+      <t id="2">基於原生熱鍵API的篩選式鎖定熱鍵。</t>
+      <!-- acquisition - combat -->
+      <t id="1001">鎖定最近的敵人</t>
+      <t id="1002">鎖定最近的敵人 \(XS-M\)</t>
+      <t id="1003">鎖定最近的敵人 \(L-XL\)</t>
+      <t id="1004">鎖定最近的來襲飛彈</t>
+      <!-- acquisition - own fleet -->
+      <t id="1005">鎖定最近的己方艦船</t>
+      <t id="1006">鎖定最近的可停靠己方艦船</t>
+      <!-- acquisition - navigation -->
+      <t id="1007">鎖定最近的太空站</t>
+      <t id="1008">鎖定最近的躍遷門</t>
+      <!-- acquisition - resources -->
+      <t id="1009">鎖定最近的可回收物</t>
+      <t id="1010">鎖定最近的小行星</t>
+      <!-- acquisition - surface elements -->
+      <t id="1011">鎖定最近的表面部件</t>
+      <t id="1012">鎖定最近的引擎</t>
+      <t id="1013">鎖定最近的砲塔</t>
+      <t id="1014">鎖定最近的護盾產生器</t>
+      <!-- navigation and utility -->
+      <t id="1015">下一個目標 \(篩選\)</t>
+      <t id="1016">上一個目標 \(篩選\)</t>
+      <t id="1017">取消鎖定並重設篩選</t>
+      <t id="1018">鎖定視線方向目標</t>
+      <!-- acquisition - mission -->
+      <t id="1019">鎖定目前任務目標</t>
+      <!-- status messages -->
+      <t id="2001">%s：未找到符合的目標</t>
+      <t id="2002">未找到符合的目標</t>
+    </page>
+  </add>
+</diff>
