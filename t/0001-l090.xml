@@ -35,6 +35,23 @@
       <!-- status messages -->
       <t id="2001">%s: uygun hedef bulunamadı</t>
       <t id="2002">Uygun hedef bulunamadı</t>
+      <!-- settings page - hotkey groups -->
+      <t id="90100">Kısayol Grupları</t>
+      <t id="90101">Savaş Hedefleri</t>
+      <t id="90102">Kendi Filon</t>
+      <t id="90103">Seyir Nesneleri</t>
+      <t id="90104">Kaynaklar</t>
+      <t id="90105">Yüzey Bileşenleri</t>
+      <t id="90106">Görev Nesnesi</t>
+      <!-- settings page - targeting behaviour -->
+      <t id="90120">Hedefleme</t>
+      <t id="90121">Hedef alındıktan sonra filtreyi koru</t>
+      <t id="90122">Genişletilmiş menzil çarpanı</t>
+      <t id="90123">Boş dok için kontrol edilen kendi gemilerin</t>
+      <!-- settings page - feedback -->
+      <t id="90140">Geri Bildirim</t>
+      <t id="90141">Ses çal</t>
+      <t id="90142">Hiçbir şey bulunamadığında mesaj göster</t>
     </page>
   </add>
 </diff>

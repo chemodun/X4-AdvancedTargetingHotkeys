@@ -35,6 +35,23 @@
       <!-- status messages -->
       <t id="2001">%s: nessun bersaglio corrispondente</t>
       <t id="2002">Nessun bersaglio corrispondente</t>
+      <!-- settings page - hotkey groups -->
+      <t id="90100">Gruppi di scorciatoie</t>
+      <t id="90101">Bersagli di combattimento</t>
+      <t id="90102">Flotta personale</t>
+      <t id="90103">Oggetti di navigazione</t>
+      <t id="90104">Risorse</t>
+      <t id="90105">Elementi di superficie</t>
+      <t id="90106">Obiettivo di missione</t>
+      <!-- settings page - targeting behaviour -->
+      <t id="90120">Mira</t>
+      <t id="90121">Mantieni il filtro dopo l'aggancio</t>
+      <t id="90122">Moltiplicatore di portata estesa</t>
+      <t id="90123">Navi controllate per un attracco libero</t>
+      <!-- settings page - feedback -->
+      <t id="90140">Riscontro</t>
+      <t id="90141">Riproduci un suono</t>
+      <t id="90142">Mostra un messaggio se non si trova nulla</t>
     </page>
   </add>
 </diff>

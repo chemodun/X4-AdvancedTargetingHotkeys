@@ -35,6 +35,23 @@
       <!-- status messages -->
       <t id="2001">%s: no matching target found</t>
       <t id="2002">No matching target found</t>
+      <!-- settings page - hotkey groups -->
+      <t id="90100">Hotkey Groups</t>
+      <t id="90101">Combat Targets</t>
+      <t id="90102">Own Fleet</t>
+      <t id="90103">Navigation Objects</t>
+      <t id="90104">Resources</t>
+      <t id="90105">Surface Elements</t>
+      <t id="90106">Mission Object</t>
+      <!-- settings page - targeting behaviour -->
+      <t id="90120">Targeting</t>
+      <t id="90121">Keep the filter after acquiring a target</t>
+      <t id="90122">Extended range multiplier</t>
+      <t id="90123">Own ships checked for a free dock</t>
+      <!-- settings page - feedback -->
+      <t id="90140">Feedback</t>
+      <t id="90141">Play a sound</t>
+      <t id="90142">Show a message when nothing is found</t>
     </page>
   </add>
 </diff>

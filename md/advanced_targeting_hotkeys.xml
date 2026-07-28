@@ -24,6 +24,15 @@
     <!--
       Reads (or initialises) mod config from player.entity.$AdvancedTargetingHotkeysConfig.
       Leaves a local $config reference.
+
+      Ownership note: the authoritative store is __ADVANCED_TARGETING_HOTKEYS_DATA, a
+      userdata savedvariable owned by ui/advanced_targeting_hotkeys.lua, which mirrors
+      it into this blackboard var on every load and after every settings change. What
+      happens here is therefore a *fallback*, for the one moment it is needed: MD's
+      Register_On_Reloaded runs off the Reloaded cue, which is signalled just before
+      Lua's own Register_Request handler gets to sync - so on the very first pass of a
+      session the mirror may not exist yet. The defaults below match the Lua ones
+      exactly; anything written here is replaced by the real values moments later.
       -->
     <library name="LoadConfig" purpose="include_actions" version="1">
       <actions>
@@ -498,6 +507,9 @@
               </do_if>
             </do_all>
 
+            <debug_text text="'AdvancedTargetingHotkeys: surface parent %s yielded %s candidates for mode %s'.[$parent.knownname, $candidates.count, $mode]"
+              chance="$debugChance" filter="general" />
+
             <!-- Nothing of the requested type left on this hull: widen to every surface element it still has. -->
             <do_if value="$candidates.count == 0 and $mode != 'surfaceAll'">
               <set_value name="$mode" exact="'surfaceAll'" />
@@ -545,6 +557,8 @@
     <library name="ApplyTarget" purpose="include_actions">
       <actions>
         <do_if value="$thing != null">
+          <debug_text text="'AdvancedTargetingHotkeys: applying target %s, id %s, mode %s, backend %s'.[$thing.knownname, $thing.idcode, $mode, $config.$targetingBackend]"
+            chance="$debugChance" filter="general" />
           <set_value name="$state.$selfChange" exact="true" />
           <do_if value="$config.$targetingBackend == 'md'">
             <set_player_target object="$thing" />
@@ -569,6 +583,8 @@
             pick - and the player is told which category came up empty, so a silent
             "the key did nothing" is never ambiguous.
             -->
+          <debug_text text="'AdvancedTargetingHotkeys: nothing matched for mode %s, target left unchanged'.[$mode]"
+            chance="$debugChance" filter="general" />
           <do_if value="$config.$soundEnabled">
             <play_sound sound="'ui_target_set_fail'" type="ui" />
           </do_if>
@@ -617,6 +633,11 @@
       <actions>
         <include_actions ref="LoadConfig" />
         <include_actions ref="LoadState" />
+        <include_actions ref="md.HotkeyApi.GetDebugChance" />
+        <debug_text text="'AdvancedTargetingHotkeys: registering actions, groups combat %s fleet %s navigation %s resources %s surface %s mission %s'.[
+          $config.$groupCombatEnabled, $config.$groupFleetEnabled, $config.$groupNavigationEnabled,
+          $config.$groupResourcesEnabled, $config.$groupSurfaceEnabled, $config.$groupMissionEnabled]"
+          chance="$debugChance" filter="general" />
 
         <!-- Navigation and utility - always available, they are what makes the modes usable. -->
         <signal_cue_instantly
@@ -830,6 +851,7 @@
 
         <remove_value name="$config" />
         <remove_value name="$state" />
+        <remove_value name="$debugChance" />
       </actions>
     </cue>
 
@@ -845,9 +867,11 @@
         <include_actions ref="LoadConfig" />
         <include_actions ref="LoadState" />
         <include_actions ref="LoadShipContext" />
+        <include_actions ref="md.HotkeyApi.GetDebugChance" />
         <set_value name="$id" exact="event.param.$id" />
         <include_actions ref="ResolveMode" />
         <set_value name="$thing" exact="null" />
+        <debug_text text="'AdvancedTargetingHotkeys: acquire id %s, mode %s'.[$id, $mode]" chance="$debugChance" filter="general" />
 
         <do_if value="$mode == 'mission'">
           <set_value name="$thing" exact="@player.activemissionwaypoint.entity" />
@@ -890,12 +914,15 @@
         <include_actions ref="LoadConfig" />
         <include_actions ref="LoadState" />
         <include_actions ref="LoadShipContext" />
+        <include_actions ref="md.HotkeyApi.GetDebugChance" />
         <set_value name="$id" exact="event.param.$id" />
         <set_value name="$mode" exact="$state.$mode" />
         <do_if value="not $config.$stickyModeEnabled">
           <set_value name="$mode" exact="null" />
         </do_if>
         <include_actions ref="BuildCandidates" />
+        <debug_text text="'AdvancedTargetingHotkeys: cycle id %s, mode %s, %s candidates'.[$id, $mode, $candidates.count]"
+          chance="$debugChance" filter="general" />
 
         <set_value name="$thing" exact="null" />
         <do_if value="$candidates.count gt 0">
@@ -923,6 +950,8 @@
               <set_value name="$thing" exact="$candidates.{1}" />
             </do_else>
           </do_else>
+          <debug_text text="'AdvancedTargetingHotkeys: cycle stepped from index %s of %s'.[$index, $candidates.count]"
+            chance="$debugChance" filter="general" />
         </do_if>
 
         <include_actions ref="ApplyTarget" />
@@ -943,6 +972,8 @@
       <actions>
         <include_actions ref="LoadConfig" />
         <include_actions ref="LoadState" />
+        <include_actions ref="md.HotkeyApi.GetDebugChance" />
+        <debug_text text="'AdvancedTargetingHotkeys: deselect, clearing mode %s'.[$state.$mode]" chance="$debugChance" filter="general" />
         <do_if value="$config.$targetingBackend == 'md'">
           <clear_player_target />
         </do_if>
@@ -974,6 +1005,7 @@
         <include_actions ref="LoadState" />
         <include_actions ref="LoadShipContext" />
 
+        <include_actions ref="md.HotkeyApi.GetDebugChance" />
         <!-- Not a filtered mode: whatever is under the crosshair wins, whatever it is.
              ApplyTarget reads $mode when reporting failure, so it has to be set. -->
         <set_value name="$mode" exact="null" />
@@ -1021,6 +1053,8 @@
             </do_all>
           </do_if>
 
+          <debug_text text="'AdvancedTargetingHotkeys: line of sight pass %s at %s, found %s'.[$pass, $angle, $thing]"
+            chance="$debugChance" filter="general" />
           <do_if value="$thing != null">
             <break />
           </do_if>
@@ -1061,6 +1095,9 @@
       </conditions>
       <actions>
         <include_actions ref="LoadState" />
+        <include_actions ref="md.HotkeyApi.GetDebugChance" />
+        <debug_text text="'AdvancedTargetingHotkeys: target changed to %s, ours: %s, mode %s'.[event.param, $state.$selfChange, $state.$mode]"
+          chance="$debugChance" filter="general" />
         <do_if value="$state.$selfChange">
           <set_value name="$state.$selfChange" exact="false" />
         </do_if>

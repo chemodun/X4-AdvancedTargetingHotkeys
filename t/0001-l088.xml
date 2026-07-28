@@ -35,6 +35,23 @@
       <!-- status messages -->
       <t id="2001">%s：未找到符合的目標</t>
       <t id="2002">未找到符合的目標</t>
+      <!-- settings page - hotkey groups -->
+      <t id="90100">熱鍵分組</t>
+      <t id="90101">戰鬥目標</t>
+      <t id="90102">己方艦隊</t>
+      <t id="90103">導航物體</t>
+      <t id="90104">資源</t>
+      <t id="90105">表面部件</t>
+      <t id="90106">任務目標</t>
+      <!-- settings page - targeting behaviour -->
+      <t id="90120">鎖定</t>
+      <t id="90121">鎖定後保留篩選</t>
+      <t id="90122">擴展範圍倍數</t>
+      <t id="90123">檢查空閒停靠位的己方艦船數</t>
+      <!-- settings page - feedback -->
+      <t id="90140">回饋</t>
+      <t id="90141">播放音效</t>
+      <t id="90142">未找到時顯示訊息</t>
     </page>
   </add>
 </diff>

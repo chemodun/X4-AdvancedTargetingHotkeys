@@ -35,6 +35,23 @@
       <!-- status messages -->
       <t id="2001">%s: nie znaleziono pasującego celu</t>
       <t id="2002">Nie znaleziono pasującego celu</t>
+      <!-- settings page - hotkey groups -->
+      <t id="90100">Grupy skrótów</t>
+      <t id="90101">Cele bojowe</t>
+      <t id="90102">Własna flota</t>
+      <t id="90103">Obiekty nawigacyjne</t>
+      <t id="90104">Zasoby</t>
+      <t id="90105">Elementy powierzchni</t>
+      <t id="90106">Obiekt misji</t>
+      <!-- settings page - targeting behaviour -->
+      <t id="90120">Namierzanie</t>
+      <t id="90121">Zachowaj filtr po namierzeniu celu</t>
+      <t id="90122">Mnożnik rozszerzonego zasięgu</t>
+      <t id="90123">Sprawdzane własne statki pod kątem wolnego doku</t>
+      <!-- settings page - feedback -->
+      <t id="90140">Informacja zwrotna</t>
+      <t id="90141">Odtwórz dźwięk</t>
+      <t id="90142">Pokaż komunikat, gdy nic nie znaleziono</t>
     </page>
   </add>
 </diff>

@@ -35,6 +35,23 @@
       <!-- status messages -->
       <t id="2001">%s: nenalezen žádný odpovídající cíl</t>
       <t id="2002">Nenalezen žádný odpovídající cíl</t>
+      <!-- settings page - hotkey groups -->
+      <t id="90100">Skupiny zkratek</t>
+      <t id="90101">Bojové cíle</t>
+      <t id="90102">Vlastní flotila</t>
+      <t id="90103">Navigační objekty</t>
+      <t id="90104">Suroviny</t>
+      <t id="90105">Povrchové prvky</t>
+      <t id="90106">Misijní objekt</t>
+      <!-- settings page - targeting behaviour -->
+      <t id="90120">Zaměřování</t>
+      <t id="90121">Zachovat filtr po zaměření cíle</t>
+      <t id="90122">Násobitel rozšířeného dosahu</t>
+      <t id="90123">Vlastní lodě kontrolované na volný dok</t>
+      <!-- settings page - feedback -->
+      <t id="90140">Zpětná vazba</t>
+      <t id="90141">Přehrát zvuk</t>
+      <t id="90142">Zobrazit zprávu, když se nic nenajde</t>
     </page>
   </add>
 </diff>

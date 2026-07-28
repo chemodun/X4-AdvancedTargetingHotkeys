@@ -35,6 +35,23 @@
       <!-- status messages -->
       <t id="2001">%s: no se encontró ningún objetivo</t>
       <t id="2002">No se encontró ningún objetivo</t>
+      <!-- settings page - hotkey groups -->
+      <t id="90100">Grupos de teclas</t>
+      <t id="90101">Objetivos de combate</t>
+      <t id="90102">Flota propia</t>
+      <t id="90103">Objetos de navegación</t>
+      <t id="90104">Recursos</t>
+      <t id="90105">Elementos de superficie</t>
+      <t id="90106">Objeto de misión</t>
+      <!-- settings page - targeting behaviour -->
+      <t id="90120">Selección de objetivos</t>
+      <t id="90121">Mantener el filtro tras fijar un objetivo</t>
+      <t id="90122">Multiplicador de alcance ampliado</t>
+      <t id="90123">Naves propias comprobadas por un muelle libre</t>
+      <!-- settings page - feedback -->
+      <t id="90140">Respuesta</t>
+      <t id="90141">Reproducir un sonido</t>
+      <t id="90142">Mostrar un mensaje si no se encuentra nada</t>
     </page>
   </add>
 </diff>

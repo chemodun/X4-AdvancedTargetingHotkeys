@@ -35,6 +35,23 @@
       <!-- status messages -->
       <t id="2001">%s: nenhum alvo correspondente encontrado</t>
       <t id="2002">Nenhum alvo correspondente encontrado</t>
+      <!-- settings page - hotkey groups -->
+      <t id="90100">Grupos de atalhos</t>
+      <t id="90101">Alvos de combate</t>
+      <t id="90102">Frota própria</t>
+      <t id="90103">Objetos de navegação</t>
+      <t id="90104">Recursos</t>
+      <t id="90105">Elementos de superfície</t>
+      <t id="90106">Objeto de missão</t>
+      <!-- settings page - targeting behaviour -->
+      <t id="90120">Seleção de alvos</t>
+      <t id="90121">Manter o filtro após fixar um alvo</t>
+      <t id="90122">Multiplicador de alcance estendido</t>
+      <t id="90123">Naves próprias verificadas por doca livre</t>
+      <!-- settings page - feedback -->
+      <t id="90140">Retorno</t>
+      <t id="90141">Reproduzir um som</t>
+      <t id="90142">Mostrar mensagem quando nada for encontrado</t>
     </page>
   </add>
 </diff>

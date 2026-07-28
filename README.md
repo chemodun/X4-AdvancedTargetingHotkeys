@@ -20,7 +20,8 @@ Two things are deliberately kept alive across a kill, because dropping them woul
 ## Requirements
 
 - **X4: Foundations** version **8.00** or higher.
-- **Native Hotkey API** version **8.00.07** or higher, which in turn requires **UI Extensions and HUD** by [kuertee](https://next.nexusmods.com/profile/kuertee?gameId=2659).
+- **Native Hotkey API** version **8.00.07** or higher, which in turn requires **UI Extensions and HUD** by [kuertee](https://next.nexusmods.com/profile/kuertee?gameId=2659). It also hosts this mod's own settings and its debug-logging switch, so there is nothing else to install for those.
+- **Print Extension List** version **1.00** or higher. It writes the game version and the full list of enabled DLCs and extensions to the debug log at startup, so any log you send with a bug report already identifies exactly what you were running.
 
 ## Hotkeys
 
@@ -88,28 +89,39 @@ Two vanilla controls are left alone on purpose and remain useful alongside this 
 - **Toggle Target Lock** is not duplicated here at all.
 - **Next / Previous Surface Element** already cycle surface elements. They have no type filter, which is exactly the gap the engine/turret/shield hotkeys fill.
 
-## Configuration
+## Settings
 
-Settings live in `player.entity.$AdvancedTargetingHotkeysConfig` and are created with working defaults on first run. There is no options screen in this version; per-hotkey enabling and disabling is already available on the Native Hotkey API's own **Hotkey Requests** page.
+Everything is configurable in game under **Options > Hotkey Management**, in the **Advanced Targeting Hotkeys** block below the Native Hotkey API's own entries - the same page you bind the keys on, rather than a separate Extensions entry.
 
-| Setting | Default | Effect |
-|---|---|---|
-| `$groupCombatEnabled` | `true` | Register the four enemy/missile hotkeys |
-| `$groupFleetEnabled` | `true` | Register the two own-ship hotkeys |
-| `$groupNavigationEnabled` | `true` | Register the station and gate hotkeys |
-| `$groupResourcesEnabled` | `true` | Register the collectable and asteroid hotkeys |
-| `$groupSurfaceEnabled` | `true` | Register the four surface-element hotkeys |
-| `$groupMissionEnabled` | `true` | Register the mission-object hotkey |
-| `$rangeMultiplier` | `2` | How far beyond radar range large and already-known objects stay pickable |
-| `$soundEnabled` | `true` | Play a confirmation blip on success and a fail blip when nothing matched |
-| `$notifyOnFailure` | `true` | Show a message naming the category when a hotkey finds nothing |
-| `$stickyModeEnabled` | `true` | Set to `false` to make Next/Previous always cycle everything, vanilla-style |
-| `$dockableScanLimit` | `12` | How many nearby own ships are checked for a free docking bay |
-| `$targetingBackend` | `'lua'` | How the target is applied. See below |
+| Section | Setting | Default | Effect |
+|---|---|---|---|
+| Hotkey Groups | Combat Targets | on | Register the four enemy/missile hotkeys |
+| | Own Fleet | on | Register the two own-ship hotkeys |
+| | Navigation Objects | on | Register the station and gate hotkeys |
+| | Resources | on | Register the collectable and asteroid hotkeys |
+| | Surface Elements | on | Register the four surface-element hotkeys |
+| | Mission Object | on | Register the mission-object hotkey |
+| Targeting | Keep the filter after acquiring a target | on | Turn off to make Next/Previous always cycle everything, vanilla-style |
+| | Extended range multiplier | `2` | How far beyond radar range large and already-known objects stay pickable |
+| | Own ships checked for a free dock | `12` | Caps the docking-bay scan behind "Target Nearest Own Ship for Landing" |
+| Feedback | Play a sound | on | Confirmation blip on success, fail blip when nothing matched |
+| | Show a message when nothing is found | on | Names the category that came up empty |
 
-Turning a whole group off means those hotkeys are never registered, so they do not occupy one of the Native Hotkey API's 48 shared slots. Turning a hotkey off from the API's own Requests page frees its slot too, and is the easier route for individual actions.
+Turning a whole group off means those hotkeys are never registered, so they do not occupy one of the Native Hotkey API's 48 shared slots. Turning a group **on** takes effect immediately; turning one **off** only releases its slots on the next reload, because the Hotkey API's registry has no unregister path. To free a single hotkey's slot right away, disable it on the API's own **Hotkey Requests** page instead.
 
-`$targetingBackend` chooses between two ways of setting the target. `'lua'` goes through this mod's small UI script and the same engine call the game itself uses for component slots, which covers surface elements. `'md'` uses the Mission Director's own `set_player_target` instead, which is simpler but is not confirmed to work on surface elements.
+Settings are stored per profile, alongside your key bindings, rather than in the save - so they follow you across saves the same way the bindings do.
+
+### Debug logging
+
+This mod has no debug switch of its own. It follows the Native Hotkey API's **Debug Logging** setting, on that same **Options > Hotkey Management** page: switching it on turns on the logging of the API and of every mod built on it, this one included. Leave it off unless you are chasing a problem.
+
+Once on, you get one line per key press - which hotkey fired, which filter it resolved to, what got targeted, or why nothing did - plus the detail behind it: candidate counts, cycle index steps, each line-of-sight cone pass, and every target change with whether this mod caused it.
+
+Lines are prefixed `AdvancedTargetingHotkeys:` and use the `general` filter. To capture them, start the game with `-debug general -logfile debuglog.txt`.
+
+### Settings not on the page
+
+One setting is deliberately left out of the UI, since it exists for troubleshooting rather than taste: `$targetingBackend`, in the `__ADVANCED_TARGETING_HOTKEYS_DATA` profile data. `'lua'` (the default) applies the target through this mod's small UI script using the same engine call the game itself uses for component slots, which covers surface elements. `'md'` uses the Mission Director's own `set_player_target` instead, which is simpler but is not confirmed to work on surface elements.
 
 ## Limitations
 
@@ -131,8 +143,10 @@ Turning a whole group off means those hotkeys are never registered, so they do n
 
 ## Changelog
 
-### [1.00] - 2026-07-28
+### [1.00] - 2026-07-29
 
 - **Added**
   - Initial version: 19 pilot-area targeting hotkeys, sticky category filter with automatic invalidation, type-filtered surface-element targeting with widening fallback, widening-cone line-of-sight pick, and configurable hotkey groups.
   - A hotkey that finds nothing leaves the current target untouched and reports which category came up empty, rather than substituting a different kind of object.
+  - Settings for hotkey groups, targeting behaviour and feedback, shown on the Native Hotkey API's own **Hotkey Management** options page and stored per profile alongside the key bindings.
+  - Debug logging follows the Native Hotkey API's own Debug Logging switch, so one setting covers the API and every mod built on it.

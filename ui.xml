@@ -4,5 +4,6 @@
     <environment type="menus">
         <dependency name="hotkey_api" />
         <file name="ui/advanced_targeting_hotkeys.lua" />
+        <savedvariable name="__ADVANCED_TARGETING_HOTKEYS_DATA" storage="userdata" />
     </environment>
 </addon>

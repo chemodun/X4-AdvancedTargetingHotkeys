@@ -35,6 +35,23 @@
       <!-- status messages -->
       <t id="2001">%s: kein passendes Ziel gefunden</t>
       <t id="2002">Kein passendes Ziel gefunden</t>
+      <!-- settings page - hotkey groups -->
+      <t id="90100">Hotkey-Gruppen</t>
+      <t id="90101">Kampfziele</t>
+      <t id="90102">Eigene Flotte</t>
+      <t id="90103">Navigationsobjekte</t>
+      <t id="90104">Ressourcen</t>
+      <t id="90105">Oberflächenelemente</t>
+      <t id="90106">Missionsobjekt</t>
+      <!-- settings page - targeting behaviour -->
+      <t id="90120">Zielerfassung</t>
+      <t id="90121">Filter nach Zielerfassung beibehalten</t>
+      <t id="90122">Multiplikator für erweiterte Reichweite</t>
+      <t id="90123">Auf freien Dock geprüfte eigene Schiffe</t>
+      <!-- settings page - feedback -->
+      <t id="90140">Rückmeldung</t>
+      <t id="90141">Ton abspielen</t>
+      <t id="90142">Meldung anzeigen, wenn nichts gefunden wird</t>
     </page>
   </add>
 </diff>

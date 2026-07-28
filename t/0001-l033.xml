@@ -35,6 +35,23 @@
       <!-- status messages -->
       <t id="2001">%s : aucune cible correspondante</t>
       <t id="2002">Aucune cible correspondante</t>
+      <!-- settings page - hotkey groups -->
+      <t id="90100">Groupes de raccourcis</t>
+      <t id="90101">Cibles de combat</t>
+      <t id="90102">Flotte personnelle</t>
+      <t id="90103">Objets de navigation</t>
+      <t id="90104">Ressources</t>
+      <t id="90105">Éléments de surface</t>
+      <t id="90106">Objectif de mission</t>
+      <!-- settings page - targeting behaviour -->
+      <t id="90120">Ciblage</t>
+      <t id="90121">Conserver le filtre après acquisition</t>
+      <t id="90122">Multiplicateur de portée étendue</t>
+      <t id="90123">Vaisseaux vérifiés pour un dock libre</t>
+      <!-- settings page - feedback -->
+      <t id="90140">Retour</t>
+      <t id="90141">Jouer un son</t>
+      <t id="90142">Afficher un message si rien n'est trouvé</t>
     </page>
   </add>
 </diff>
