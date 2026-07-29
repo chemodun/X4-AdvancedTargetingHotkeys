@@ -13,8 +13,8 @@
      by default); with 'md' it never raises these events and this half simply idles.
 
   2. Owning the mod's settings: the config store itself (a userdata savedvariable),
-     the rows shown for it in the Options menu, and the one-way mirror MD reads.
-     See the two block comments further down.
+     the Options sub-page they get under hotkey_api's own Hotkey Management page,
+     and the one-way mirror MD reads. See the two block comments further down.
 ]]
 
 local PAGE_ID = 1972092437
@@ -197,15 +197,29 @@ function advTargeting.OnClearTarget()
   RemoveSofttarget()
 end
 
--- *** Extension Options: nested inside hotkey_api's own Management page ***
+-- *** Extension Options: own sub-page below hotkey_api's Management page ***
 --
--- This mod's settings are appended directly into hotkey_api's native "Hotkey
--- Management" Options page (config.optionDefinitions[HotkeyApi.managementPageId]),
--- via the same displayOptions_modifyOptions UIX hook (gameoptions.xpl) hotkey_api
--- itself uses - the same arrangement simple_hotkeys uses. Everything this mod does
--- is hotkey_api-specific, so its settings belong next to the bindings they affect
--- rather than on a separate Extensions page; sn_mod_support_apis and options_helper
--- are not dependencies of this mod at all.
+-- This mod's settings live on a page of their own, reached from a single row on
+-- hotkey_api's native "Hotkey Management" Options page, via the same
+-- displayOptions_modifyOptions UIX hook (gameoptions.xpl) hotkey_api itself uses.
+-- Everything this mod does is hotkey_api-specific, so its settings belong under the
+-- bindings they affect rather than on a separate Extensions page;
+-- sn_mod_support_apis and options_helper are not dependencies of this mod at all.
+--
+-- Nesting needs no new machinery - the options engine's sub-menu support is fully
+-- generic, and hotkey_api's own Management page is already built this way:
+--   * any key added to config.optionDefinitions becomes a real page, because
+--     menu.submenuHandler ends its hard-coded elseif chain with a catch-all
+--     "elseif config.optionDefinitions[optionParameter] then menu.displayOptions(...)";
+--   * any row carrying submenu = "<page id>" navigates to it, from
+--     menu.onSelectElement ("if option.callback ... elseif option.submenu then
+--     menu.openSubmenu(option.submenu, option.id)");
+--   * the back arrow, the menu.history stack and row preselect are all handled by
+--     menu.displayOptions/menu.onCloseElement for free, for any page but "main".
+-- Two constraints follow from that, both of them load-bearing here: the nav row must
+-- have no callback (callback is tested first and would shadow submenu), and
+-- SETTINGS_PAGE_ID must not collide with one of the ~35 page names submenuHandler
+-- matches before its optionDefinitions fallback, or that branch would hijack it.
 --
 -- Row-append ordering: gameoptions.xpl dispatches every registered
 -- "displayOptions_modifyOptions" callback via pairs() over a hash-keyed table, not
@@ -222,7 +236,11 @@ end
 -- flipping between vanilla's own Enabled/Disabled strings ({1001,4825}/{1001,8942},
 -- no new translation), and the two numeric settings are "slidercell" rows.
 
-local FIRST_ROW_ID = "ath_group_combat_toggle"
+-- Page key for this mod's own settings page, and the id of the single row on
+-- hotkey_api's page that opens it. Named after hotkey_api's own page keys
+-- ("hotkey_api_management" etc.) and, as above, deliberately unlike any vanilla one.
+local SETTINGS_PAGE_ID = "ath_settings"
+local NAV_ROW_ID = "ath_settings_nav"
 
 local function ToggleRow(id, nameTextId, configKey, reregister)
   return {
@@ -273,6 +291,39 @@ local function SliderRow(id, nameTextId, configKey, min, max, step)
   }
 end
 
+-- The settings page itself. "name" is the page title menu.displayOptions renders in
+-- the header row (a function is fine - widget text accepts one, and hotkey_api's own
+-- page title does the same); the positional entries are the rows, which ipairs walks
+-- while the hash-keyed "name" stays out of the array part.
+--
+-- id "line" and id "header" are the two row ids menu.displayOption special-cases (a
+-- separator line and a sub-header); anything else would be rendered as a normal,
+-- selectable row - so a blank spacer row is not the way to separate sections here.
+local function BuildSettingsPage()
+  return {
+    name = function() return ReadText(PAGE_ID, 1) end,
+
+    { id = "header", name = function() return ReadText(PAGE_ID, 90100) end },
+    ToggleRow("ath_group_combat_toggle", 90101, "groupCombatEnabled", true),
+    ToggleRow("ath_group_fleet_toggle", 90102, "groupFleetEnabled", true),
+    ToggleRow("ath_group_navigation_toggle", 90103, "groupNavigationEnabled", true),
+    ToggleRow("ath_group_resources_toggle", 90104, "groupResourcesEnabled", true),
+    ToggleRow("ath_group_surface_toggle", 90105, "groupSurfaceEnabled", true),
+    ToggleRow("ath_group_mission_toggle", 90106, "groupMissionEnabled", true),
+
+    { id = "line" },
+    { id = "header", name = function() return ReadText(PAGE_ID, 90120) end },
+    ToggleRow("ath_sticky_mode_toggle", 90121, "stickyModeEnabled", false),
+    SliderRow("ath_range_multiplier", 90122, "rangeMultiplier", 1, 5, 1),
+    SliderRow("ath_dockable_scan_limit", 90123, "dockableScanLimit", 1, 50, 1),
+
+    { id = "line" },
+    { id = "header", name = function() return ReadText(PAGE_ID, 90140) end },
+    ToggleRow("ath_sound_toggle", 90141, "soundEnabled", false),
+    ToggleRow("ath_notify_toggle", 90142, "notifyOnFailure", false),
+  }
+end
+
 local function OnDisplayOptions(options, config)
   if not (HotkeyApi and HotkeyApi.OnDisplayOptions and HotkeyApi.managementPageId) then
     return options
@@ -280,47 +331,44 @@ local function OnDisplayOptions(options, config)
 
   options = HotkeyApi.OnDisplayOptions(options, config)
 
-  local page = config and config.optionDefinitions and config.optionDefinitions[HotkeyApi.managementPageId]
-  if not page then
-    -- hotkey_api hasn't created its page this render (e.g. config not ready
-    -- yet) - nothing safe to append to.
+  local optionDefinitions = config and config.optionDefinitions
+  if not optionDefinitions then
     return options
   end
 
+  local page = optionDefinitions[HotkeyApi.managementPageId]
+  if not page then
+    -- hotkey_api hasn't created its page this render (e.g. config not ready
+    -- yet) - nothing safe to hang our own page off.
+    return options
+  end
+
+  -- config.optionDefinitions is the same persistent table for the whole UI session,
+  -- so this is a create-once, not a per-render build - same guard hotkey_api uses for
+  -- its own page. It has to happen no later than the nav row insertion below: if the
+  -- page were missing when the row is clicked, submenuHandler would fall off the end
+  -- of its chain and simply do nothing (a dead row, no error).
+  if not optionDefinitions[SETTINGS_PAGE_ID] then
+    optionDefinitions[SETTINGS_PAGE_ID] = BuildSettingsPage()
+    debugLog("OnDisplayOptions: created config.optionDefinitions['%s']", SETTINGS_PAGE_ID)
+  end
+
   for _, row in ipairs(page) do
-    if (type(row) == "table") and (row.id == FIRST_ROW_ID) then
-      return options -- already appended on a previous render
+    if (type(row) == "table") and (row.id == NAV_ROW_ID) then
+      return options -- already inserted on a previous render
     end
   end
 
-  -- id "line" and id "header" are the two row ids menu.displayOption special-cases
-  -- (a separator line and a sub-header); anything else would be rendered as a
-  -- normal, selectable row - so a blank spacer row is not the way to separate
-  -- sections here.
   table.insert(page, { id = "line" })
-  table.insert(page, { id = "header", name = function() return ReadText(PAGE_ID, 1) end })
-  table.insert(page, { id = "line" })
+  table.insert(page, {
+    id = NAV_ROW_ID,
+    name = function() return ReadText(PAGE_ID, 1) end,
+    submenu = SETTINGS_PAGE_ID,
+    -- No callback here, deliberately: menu.onSelectElement tests callback first and
+    -- would never reach the submenu branch.
+  })
 
-  table.insert(page, { id = "header", name = function() return ReadText(PAGE_ID, 90100) end })
-  table.insert(page, ToggleRow(FIRST_ROW_ID, 90101, "groupCombatEnabled", true))
-  table.insert(page, ToggleRow("ath_group_fleet_toggle", 90102, "groupFleetEnabled", true))
-  table.insert(page, ToggleRow("ath_group_navigation_toggle", 90103, "groupNavigationEnabled", true))
-  table.insert(page, ToggleRow("ath_group_resources_toggle", 90104, "groupResourcesEnabled", true))
-  table.insert(page, ToggleRow("ath_group_surface_toggle", 90105, "groupSurfaceEnabled", true))
-  table.insert(page, ToggleRow("ath_group_mission_toggle", 90106, "groupMissionEnabled", true))
-
-  table.insert(page, { id = "line" })
-  table.insert(page, { id = "header", name = function() return ReadText(PAGE_ID, 90120) end })
-  table.insert(page, ToggleRow("ath_sticky_mode_toggle", 90121, "stickyModeEnabled", false))
-  table.insert(page, SliderRow("ath_range_multiplier", 90122, "rangeMultiplier", 1, 5, 1))
-  table.insert(page, SliderRow("ath_dockable_scan_limit", 90123, "dockableScanLimit", 1, 50, 1))
-
-  table.insert(page, { id = "line" })
-  table.insert(page, { id = "header", name = function() return ReadText(PAGE_ID, 90140) end })
-  table.insert(page, ToggleRow("ath_sound_toggle", 90141, "soundEnabled", false))
-  table.insert(page, ToggleRow("ath_notify_toggle", 90142, "notifyOnFailure", false))
-
-  debugLog("OnDisplayOptions: appended settings rows to hotkey_api's management page")
+  debugLog("OnDisplayOptions: inserted the '%s' row into hotkey_api's management page", NAV_ROW_ID)
   return options
 end
 

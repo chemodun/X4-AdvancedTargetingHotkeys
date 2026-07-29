@@ -91,7 +91,7 @@ Two vanilla controls are left alone on purpose and remain useful alongside this 
 
 ## Settings
 
-Everything is configurable in game under **Options > Hotkey Management**, in the **Advanced Targeting Hotkeys** block below the Native Hotkey API's own entries - the same page you bind the keys on, rather than a separate Extensions entry.
+Everything is configurable in game under **Options > Hotkey Management > Advanced Targeting Hotkeys**, reached from the same page you bind the keys on, rather than from a separate Extensions entry.
 
 | Section | Setting | Default | Effect |
 |---|---|---|---|
@@ -113,7 +113,7 @@ Settings are stored per profile, alongside your key bindings, rather than in the
 
 ### Debug logging
 
-This mod has no debug switch of its own. It follows the Native Hotkey API's **Debug Logging** setting, on that same **Options > Hotkey Management** page: switching it on turns on the logging of the API and of every mod built on it, this one included. Leave it off unless you are chasing a problem.
+This mod has no debug switch of its own. It follows the Native Hotkey API's **Debug Logging** setting, one level up on the **Options > Hotkey Management** page itself: switching it on turns on the logging of the API and of every mod built on it, this one included. Leave it off unless you are chasing a problem.
 
 Once on, you get one line per key press - which hotkey fired, which filter it resolved to, what got targeted, or why nothing did - plus the detail behind it: candidate counts, cycle index steps, each line-of-sight cone pass, and every target change with whether this mod caused it.
 
@@ -148,5 +148,5 @@ One setting is deliberately left out of the UI, since it exists for troubleshoot
 - **Added**
   - Initial version: 19 pilot-area targeting hotkeys, sticky category filter with automatic invalidation, type-filtered surface-element targeting with widening fallback, widening-cone line-of-sight pick, and configurable hotkey groups.
   - A hotkey that finds nothing leaves the current target untouched and reports which category came up empty, rather than substituting a different kind of object.
-  - Settings for hotkey groups, targeting behaviour and feedback, shown on the Native Hotkey API's own **Hotkey Management** options page and stored per profile alongside the key bindings.
+  - Settings for hotkey groups, targeting behaviour and feedback, on their own page under the Native Hotkey API's **Hotkey Management** options page and stored per profile alongside the key bindings.
   - Debug logging follows the Native Hotkey API's own Debug Logging switch, so one setting covers the API and every mod built on it.
