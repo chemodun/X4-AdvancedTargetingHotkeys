@@ -21,10 +21,10 @@
       <t id="1009">Target Nearest Collectable</t>
       <t id="1010">Target Nearest Asteroid</t>
       <!-- acquisition - surface elements -->
-      <t id="1011">Target Nearest Surface Element</t>
-      <t id="1012">Target Nearest Engine</t>
-      <t id="1013">Target Nearest Turret</t>
-      <t id="1014">Target Nearest Shield Generator</t>
+      <t id="1011">Target Surface Element on Selected Object</t>
+      <t id="1012">Target Engine on Selected Object</t>
+      <t id="1013">Target Turret on Selected Object</t>
+      <t id="1014">Target Shield Generator on Selected Object</t>
       <!-- navigation and utility -->
       <t id="1015">Select Next Target \(Filtered\)</t>
       <t id="1016">Select Previous Target \(Filtered\)</t>

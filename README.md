@@ -8,7 +8,7 @@ Built on the [Native Hotkey API](https://www.nexusmods.com/x4foundations/mods/21
 
 Vanilla gives you "Next Target" and "Previous Target", and they cycle through every object around you. That is fine until you are in a fight next to a station, where getting back to the fighter that is shooting at you means pressing the key past a dozen storage modules and a lockbox.
 
-This mod adds a **sticky filter**. Every acquisition hotkey does two things: it targets the nearest matching object, and it remembers what kind of thing you asked for. From then on Next/Previous only walk that category. Press "Target Nearest Enemy" and Next cycles enemies. Press "Target Nearest Station" and Next cycles stations. Press "Target Nearest Turret" and Next walks the turrets of the hull you are attacking, which is what you actually want while preparing a boarding operation.
+This mod adds a **sticky filter**. Every acquisition hotkey does two things: it targets the nearest matching object, and it remembers what kind of thing you asked for. From then on Next/Previous only walk that category. Press "Target Nearest Enemy" and Next cycles enemies. Press "Target Nearest Station" and Next cycles stations. Press "Target Turret on Selected Object" and Next walks the turrets of the hull you are attacking, which is what you actually want while preparing a boarding operation.
 
 The filter is dropped again the moment you change target by any other means: a mouse click, one of the vanilla targeting keys, or the target being destroyed or leaving the sector. Next/Previous then go back to cycling everything, exactly as they do in vanilla. Nothing gets stuck.
 
@@ -43,13 +43,13 @@ Each of these targets the nearest match and switches the filter to that category
 | Target Nearest Gate | Nearest known gate, accelerator or highway entry |
 | Target Nearest Collectable | Nearest known dropped ware or lockbox |
 | Target Nearest Asteroid | Nearest known asteroid, for manual mining |
-| Target Nearest Surface Element | Nearest working surface element of your current target |
-| Target Nearest Engine | Same, restricted to engines |
-| Target Nearest Turret | Same, restricted to turrets and launchers |
-| Target Nearest Shield Generator | Same, restricted to shield generators |
+| Target Surface Element on Selected Object | Nearest working surface element of the ship or station you have selected |
+| Target Engine on Selected Object | Same, restricted to engines |
+| Target Turret on Selected Object | Same, restricted to turrets and launchers |
+| Target Shield Generator on Selected Object | Same, restricted to shield generators |
 | Target Active Mission Object | The object your current mission points at |
 
-The four surface-element hotkeys work with nothing targeted at all: they fall back to the nearest visible medium or larger ship or station and start there.
+These four are named after what they actually do: they work on the object **you have selected**, and on nothing else. Select a carrier across the sector and "Target Turret on Selected Object" gives you that carrier's turrets, not the turrets of the fighter next to you. If a surface element is already selected, they stay on the same hull, and so does Next/Previous. With nothing selected they use the last hull you worked on; with nothing selected and no previous hull they do nothing at all and tell you so, rather than grabbing a turret off whatever happens to be closest. Docked ships are never included either, so cycling a carrier's turrets will not wander into the fighters sitting in its bays.
 
 ### Navigation
 

@@ -21,10 +21,10 @@
       <t id="1009">Aggancia l'oggetto raccoglibile più vicino</t>
       <t id="1010">Aggancia l'asteroide più vicino</t>
       <!-- acquisition - surface elements -->
-      <t id="1011">Aggancia l'elemento di superficie più vicino</t>
-      <t id="1012">Aggancia il motore più vicino</t>
-      <t id="1013">Aggancia la torretta più vicina</t>
-      <t id="1014">Aggancia il generatore di scudi più vicino</t>
+      <t id="1011">Aggancia l'elemento di superficie dell'oggetto selezionato</t>
+      <t id="1012">Aggancia il motore dell'oggetto selezionato</t>
+      <t id="1013">Aggancia la torretta dell'oggetto selezionato</t>
+      <t id="1014">Aggancia il generatore di scudi dell'oggetto selezionato</t>
       <!-- navigation and utility -->
       <t id="1015">Bersaglio successivo \(filtrato\)</t>
       <t id="1016">Bersaglio precedente \(filtrato\)</t>

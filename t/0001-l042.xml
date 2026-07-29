@@ -21,10 +21,10 @@
       <t id="1009">Zaměřit nejbližší sběratelný objekt</t>
       <t id="1010">Zaměřit nejbližší asteroid</t>
       <!-- acquisition - surface elements -->
-      <t id="1011">Zaměřit nejbližší povrchový prvek</t>
-      <t id="1012">Zaměřit nejbližší motor</t>
-      <t id="1013">Zaměřit nejbližší věž</t>
-      <t id="1014">Zaměřit nejbližší štítový generátor</t>
+      <t id="1011">Zaměřit povrchový prvek vybraného objektu</t>
+      <t id="1012">Zaměřit motor vybraného objektu</t>
+      <t id="1013">Zaměřit věž vybraného objektu</t>
+      <t id="1014">Zaměřit štítový generátor vybraného objektu</t>
       <!-- navigation and utility -->
       <t id="1015">Další cíl \(filtrovaný\)</t>
       <t id="1016">Předchozí cíl \(filtrovaný\)</t>

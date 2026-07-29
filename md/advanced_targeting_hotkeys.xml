@@ -101,7 +101,9 @@
       $selfChange is the "this target change was mine" flag: set immediately
       before the target is applied, cleared by On_Target_Changed. Without it,
       our own set-target would look identical to a mouse click and would clear
-      the very mode we just established.
+      the very mode we just established. Note it is cleared only by an event that
+      carries an object, never by the intermediate null one that precedes it when
+      a previous target is being replaced.
       -->
     <library name="LoadState" purpose="include_actions" version="1">
       <actions>
@@ -271,20 +273,46 @@
     </library>
 
     <!--
+      $element -> $elementHull: the ship or station a surface element belongs to.
+
+      NOT $element.parent. On a ship the immediate parent is the ship, but on a
+      station it is the MODULE the element sits on, which is neither radar-visible
+      nor a useful scope to iterate - so surface cycling died on stations the moment
+      the target became a surface element, while ships worked. .defensible resolves
+      straight to the owning ship or station, which is what vanilla itself uses on
+      surface elements (aiscripts/order.fight.lasertower.xml:52). .parent stays as a
+      fallback for the theoretical case of an element with no defensible context.
+      -->
+    <library name="ResolveHullOf" purpose="include_actions">
+      <actions>
+        <set_value name="$elementHull" exact="@$element.defensible" />
+        <do_if value="$elementHull == null">
+          <set_value name="$elementHull" exact="@$element.parent" />
+        </do_if>
+      </actions>
+    </library>
+
+    <!--
       Decides which hull's surface elements the surface modes should iterate,
       leaving it in $parent (null if there is nothing usable).
 
-      Priority: the current target's parent if a surface element is targeted ->
+      Priority: the current target's hull if a surface element is targeted ->
       the current target itself -> the hull remembered from the last surface
-      acquisition -> the nearest visible M/L/XL ship or station. The last step is
-      what makes "target nearest turret" work with no target selected at all.
+      acquisition. Nothing else. There is deliberately NO "nearest visible hull"
+      fallback: these hotkeys act on the object you selected, and grabbing a turret
+      off some other ship merely because it happens to be closer is the same class of
+      wrong as substituting a station when you asked for a gate. With no target and
+      no remembered hull, $parent stays null, BuildCandidates returns an empty group
+      and ApplyTarget reports the failure without touching the current target.
       -->
     <library name="ResolveSurfaceParent" purpose="include_actions">
       <actions>
         <set_value name="$parent" exact="null" />
         <do_if value="player.target != null">
           <do_if value="player.target.issurfaceelement">
-            <set_value name="$parent" exact="player.target.parent" />
+            <set_value name="$element" exact="player.target" />
+            <include_actions ref="ResolveHullOf" />
+            <set_value name="$parent" exact="$elementHull" />
           </do_if>
           <do_else>
             <set_value name="$parent" exact="player.target" />
@@ -293,16 +321,14 @@
         <do_elseif value="$state.$surfaceParent != null">
           <set_value name="$parent" exact="$state.$surfaceParent" />
         </do_elseif>
-        <do_if value="$parent == null">
-          <find_object name="$parentCandidates" class="[class.ship_m, class.ship_l, class.ship_xl, class.station]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
-            <match_attention min="attention.visible" />
-          </find_object>
-          <do_all counter="$i" exact="$parentCandidates.count">
-            <do_if value="$parentCandidates.{$i} != $ownShip">
-              <set_value name="$parent" exact="$parentCandidates.{$i}" />
-              <break />
-            </do_if>
-          </do_all>
+        <!--
+          Never iterate your own hull's elements: "target a turret" while flying is
+          about something you are shooting at, and the ship you are sitting in is
+          never that. Cannot happen through player.target, but a remembered hull
+          could in principle be one you have since boarded or teleported into.
+          -->
+        <do_if value="$parent == $ownShip">
+          <set_value name="$parent" exact="null" />
         </do_if>
         <!--
           Surface elements of something you cannot actually see are not pickable.
@@ -523,6 +549,15 @@
               </do_all>
             </do_if>
           </do_if>
+          <do_else>
+            <!--
+              Logged explicitly: an empty surface result with no line above it used to
+              be indistinguishable from "the hull has no elements left", which is what
+              made the station bug hard to read in a log.
+              -->
+            <debug_text text="'AdvancedTargetingHotkeys: no usable surface hull for mode %s, target %s'.[$mode, @player.target.knownname]"
+              chance="$debugChance" filter="general" />
+          </do_else>
         </do_elseif>
 
         <!--
@@ -568,7 +603,9 @@
           </do_else>
           <do_if value="$thing.issurfaceelement">
             <set_value name="$state.$surfaceTarget" exact="$thing" />
-            <set_value name="$state.$surfaceParent" exact="$thing.parent" />
+            <set_value name="$element" exact="$thing" />
+            <include_actions ref="ResolveHullOf" />
+            <set_value name="$state.$surfaceParent" exact="$elementHull" />
           </do_if>
           <do_else>
             <set_value name="$state.$surfaceTarget" exact="null" />
@@ -981,8 +1018,13 @@
           <raise_lua_event name="'AdvancedTargetingHotkeys.ClearTarget'" />
         </do_else>
         <include_actions ref="ResetMode" />
-        <!-- We have already reset everything; stop On_Target_Changed doing it again. -->
-        <set_value name="$state.$selfChange" exact="true" />
+        <!--
+          No $selfChange flag here on purpose. A clear raises exactly one event, with
+          param null, and the flag is only consumed by an event carrying an object -
+          setting it would leave it stuck and swallow the next genuine external change.
+          Not needed either: everything is already reset, so On_Target_Changed's own
+          null branch just runs ResetMode a second time, which is a no-op.
+          -->
       </actions>
     </cue>
 
@@ -1099,7 +1141,15 @@
         <debug_text text="'AdvancedTargetingHotkeys: target changed to %s, ours: %s, mode %s'.[event.param, $state.$selfChange, $state.$mode]"
           chance="$debugChance" filter="general" />
         <do_if value="$state.$selfChange">
-          <set_value name="$state.$selfChange" exact="false" />
+          <!--
+            Replacing an existing target raises TWO events: the old target being
+            dropped, param null, and only then the new one. The flag must survive
+            the first or the second looks external and clears the mode we just set,
+            so it is consumed by the first event carrying an actual object.
+            -->
+          <do_if value="event.param != null">
+            <set_value name="$state.$selfChange" exact="false" />
+          </do_if>
         </do_if>
         <do_else>
           <do_if value="event.param == null">
@@ -1118,7 +1168,9 @@
               <set_value name="$state.$surfaceMode" exact="'surfaceAll'" />
             </do_if>
             <set_value name="$state.$mode" exact="$state.$surfaceMode" />
-            <set_value name="$state.$surfaceParent" exact="event.param.parent" />
+            <set_value name="$element" exact="event.param" />
+            <include_actions ref="ResolveHullOf" />
+            <set_value name="$state.$surfaceParent" exact="$elementHull" />
             <set_value name="$state.$surfaceTarget" exact="event.param" />
           </do_elseif>
           <do_else>

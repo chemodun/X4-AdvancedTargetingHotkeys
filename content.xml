@@ -58,5 +58,5 @@
     description="Гарячі клавіші фільтрованого захоплення цілі на основі рідного Hotkey API: захопи найближчого ворога за розміром, ракету на підльоті, власний корабель, корабель для посадки, станцію, ворота, збиральний об'єкт, астероїд або поверхневий елемент (двигуни/турелі/щити), а потім гортай лише в межах цього фільтра. Містить вибір по лінії зору з конусом, що розширюється."></text>
   <dependency version="800"></dependency>
   <dependency id="ws_3750545906" optional="false" name="Native Hotkey API" version="80007"></dependency>
-  <dependency id="ws_3770927339" optional="false" name="Print Extension List" version="100"></dependency>
+  <dependency id="ws_3770927339" optional="false" name="Print Extension List" version="101"></dependency>
 </content>

@@ -21,10 +21,10 @@
       <t id="1009">Cibler l'objet récupérable le plus proche</t>
       <t id="1010">Cibler l'astéroïde le plus proche</t>
       <!-- acquisition - surface elements -->
-      <t id="1011">Cibler l'élément de surface le plus proche</t>
-      <t id="1012">Cibler le moteur le plus proche</t>
-      <t id="1013">Cibler la tourelle la plus proche</t>
-      <t id="1014">Cibler le générateur de bouclier le plus proche</t>
+      <t id="1011">Cibler l'élément de surface sur l'objet sélectionné</t>
+      <t id="1012">Cibler le moteur sur l'objet sélectionné</t>
+      <t id="1013">Cibler la tourelle sur l'objet sélectionné</t>
+      <t id="1014">Cibler le générateur de bouclier sur l'objet sélectionné</t>
       <!-- navigation and utility -->
       <t id="1015">Cible suivante \(filtrée\)</t>
       <t id="1016">Cible précédente \(filtrée\)</t>

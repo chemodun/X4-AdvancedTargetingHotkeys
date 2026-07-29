@@ -21,10 +21,10 @@
       <t id="1009">Fixar o objeto coletável mais próximo</t>
       <t id="1010">Fixar o asteroide mais próximo</t>
       <!-- acquisition - surface elements -->
-      <t id="1011">Fixar o elemento de superfície mais próximo</t>
-      <t id="1012">Fixar o motor mais próximo</t>
-      <t id="1013">Fixar a torre mais próxima</t>
-      <t id="1014">Fixar o gerador de escudo mais próximo</t>
+      <t id="1011">Fixar o elemento de superfície do objeto selecionado</t>
+      <t id="1012">Fixar o motor do objeto selecionado</t>
+      <t id="1013">Fixar a torre do objeto selecionado</t>
+      <t id="1014">Fixar o gerador de escudo do objeto selecionado</t>
       <!-- navigation and utility -->
       <t id="1015">Próximo alvo \(filtrado\)</t>
       <t id="1016">Alvo anterior \(filtrado\)</t>

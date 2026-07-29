@@ -21,10 +21,10 @@
       <t id="1009">Namierz najbliższy przedmiot do zebrania</t>
       <t id="1010">Namierz najbliższą asteroidę</t>
       <!-- acquisition - surface elements -->
-      <t id="1011">Namierz najbliższy element powierzchni</t>
-      <t id="1012">Namierz najbliższy silnik</t>
-      <t id="1013">Namierz najbliższą wieżyczkę</t>
-      <t id="1014">Namierz najbliższy generator tarczy</t>
+      <t id="1011">Namierz element powierzchni wybranego obiektu</t>
+      <t id="1012">Namierz silnik wybranego obiektu</t>
+      <t id="1013">Namierz wieżyczkę wybranego obiektu</t>
+      <t id="1014">Namierz generator tarczy wybranego obiektu</t>
       <!-- navigation and utility -->
       <t id="1015">Następny cel \(filtrowany\)</t>
       <t id="1016">Poprzedni cel \(filtrowany\)</t>

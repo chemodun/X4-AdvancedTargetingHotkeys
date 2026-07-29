@@ -21,10 +21,10 @@
       <t id="1009">Nächstes Sammelobjekt erfassen</t>
       <t id="1010">Nächsten Asteroiden erfassen</t>
       <!-- acquisition - surface elements -->
-      <t id="1011">Nächstes Oberflächenelement erfassen</t>
-      <t id="1012">Nächstes Triebwerk erfassen</t>
-      <t id="1013">Nächstes Geschütz erfassen</t>
-      <t id="1014">Nächsten Schildgenerator erfassen</t>
+      <t id="1011">Oberflächenelement des gewählten Objekts erfassen</t>
+      <t id="1012">Triebwerk des gewählten Objekts erfassen</t>
+      <t id="1013">Geschütz des gewählten Objekts erfassen</t>
+      <t id="1014">Schildgenerator des gewählten Objekts erfassen</t>
       <!-- navigation and utility -->
       <t id="1015">Nächstes Ziel wählen \(gefiltert\)</t>
       <t id="1016">Vorheriges Ziel wählen \(gefiltert\)</t>

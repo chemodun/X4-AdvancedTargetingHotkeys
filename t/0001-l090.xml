@@ -21,10 +21,10 @@
       <t id="1009">En yakın toplanabilir nesneyi hedefle</t>
       <t id="1010">En yakın asteroidi hedefle</t>
       <!-- acquisition - surface elements -->
-      <t id="1011">En yakın yüzey bileşenini hedefle</t>
-      <t id="1012">En yakın motoru hedefle</t>
-      <t id="1013">En yakın tareti hedefle</t>
-      <t id="1014">En yakın kalkan üretecini hedefle</t>
+      <t id="1011">Seçili nesnenin yüzey bileşenini hedefle</t>
+      <t id="1012">Seçili nesnenin motorunu hedefle</t>
+      <t id="1013">Seçili nesnenin taretini hedefle</t>
+      <t id="1014">Seçili nesnenin kalkan üretecini hedefle</t>
       <!-- navigation and utility -->
       <t id="1015">Sonraki hedef \(filtreli\)</t>
       <t id="1016">Önceki hedef \(filtreli\)</t>
