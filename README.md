@@ -10,12 +10,19 @@ Vanilla gives you "Next Target" and "Previous Target", and they cycle through ev
 
 This mod adds a **sticky filter**. Every acquisition hotkey does two things: it targets the nearest matching object, and it remembers what kind of thing you asked for. From then on Next/Previous only walk that category. Press "Target Nearest Enemy" and Next cycles enemies. Press "Target Nearest Station" and Next cycles stations. Press "Target Turret on Selected Object" and Next walks the turrets of the hull you are attacking, which is what you actually want while preparing a boarding operation.
 
-The filter is dropped again the moment you change target by any other means: a mouse click, one of the vanilla targeting keys, or the target being destroyed or leaving the sector. Next/Previous then go back to cycling everything, exactly as they do in vanilla. Nothing gets stuck.
+The filter is dropped again the moment you change target by any other means: a mouse click, one of the vanilla targeting keys, or the target leaving the sector. Next/Previous then go back to cycling everything, exactly as they do in vanilla. Nothing gets stuck.
 
-Two things are deliberately kept alive across a kill, because dropping them would be actively annoying:
+### When your target goes away
 
-- Destroying a **surface element** keeps you in surface mode, so you can keep working through a hull without re-pressing the acquisition key after every turret.
-- Running out of one **type** of surface element (say, the last engine) widens the filter to all remaining surface elements of that same hull, rather than dumping you back out to free targeting.
+Losing a target is the one case where the filter is *not* dropped. In the categories where you are working through a list of things - enemies of any size, incoming missiles, collectables, and all four surface-element filters - the mod picks up where you left off instead:
+
+- **The next one is selected automatically**, and "next" means the entry that followed the one you lost, not merely the closest one. Strip a hull of turrets, clear a wing of fighters, or fly through a field of dropped containers without touching the acquisition key again.
+- **Collectables count as lost when they are collected**, not only when they are shot, so chain-collecting drops works the same way.
+- **Running out of one type** of surface element (say, the last engine) widens the filter to the remaining surface elements of that same hull rather than dumping you back out to free targeting.
+- **A hull stripped bare** hands you the hull itself.
+- When the category is genuinely empty, **nothing happens at all** - no sound, no message, and your target is left alone. This is a reaction to something dying, not to a key press, so it stays quiet.
+
+Navigation categories - your own ships, stations, gates, asteroids, mission targets - deliberately do *not* do this. Having a station silently swapped for another one because the first blew up would be surprising rather than helpful.
 
 ## Requirements
 
