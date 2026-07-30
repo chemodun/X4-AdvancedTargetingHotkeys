@@ -41,35 +41,31 @@ All 20 actions are **pilot-area**: they fire while you are at the controls of a 
 
 Each of these targets the nearest match and switches the filter to that category.
 
-| Hotkey | What it picks |
-|---|---|
-| Target Nearest Enemy | Nearest hostile ship, drone, mine, missile or explosive |
-| Target Nearest Enemy \(XS-M\) | Nearest hostile fighter-class or medium ship |
-| Target Nearest Enemy \(L-XL\) | Nearest hostile capital ship |
-| Target Nearest Incoming Missile | Nearest missile actually aimed at you, so you can shoot it down |
-| Target Nearest Own Ship | Nearest ship you own, excluding the one you are flying |
-| Target Nearest Own Ship for Landing | Nearest ship you own with a docking bay that fits your current hull, for when you need somewhere to run to |
-| Target Nearest Station | Nearest known station |
-| Target Nearest Gate | Nearest known gate, accelerator or highway entry |
-| Target Nearest Collectable | Nearest known dropped ware or lockbox |
-| Target Nearest Asteroid | Nearest known asteroid, for manual mining |
-| Target Surface Element on Selected Object | Nearest working surface element of the ship or station you have selected |
-| Target Engine on Selected Object | Same, restricted to engines |
-| Target Turret on Selected Object | Same, restricted to turrets and launchers |
-| Target Shield Generator on Selected Object | Same, restricted to shield generators |
-| Target Active Mission Object | The object your current mission points at |
+- **Target Nearest Enemy** - nearest hostile ship, drone, mine, missile or explosive
+- **Target Nearest Enemy (XS-M)** - nearest hostile fighter-class or medium ship
+- **Target Nearest Enemy (L-XL)** - nearest hostile capital ship
+- **Target Nearest Incoming Missile** - nearest missile actually aimed at you, so you can shoot it down
+- **Target Nearest Own Ship** - nearest ship you own, excluding the one you are flying
+- **Target Nearest Own Ship for Landing** - nearest ship you own with a docking bay that fits your current hull, for when you need somewhere to run to
+- **Target Nearest Station** - nearest known station
+- **Target Nearest Gate** - nearest known gate, accelerator or highway entry
+- **Target Nearest Collectable** - nearest known dropped ware or lockbox
+- **Target Nearest Asteroid** - nearest known asteroid, for manual mining
+- **Target Surface Element on Selected Object** - nearest working surface element of the ship or station you have selected
+- **Target Engine on Selected Object** - same, restricted to engines
+- **Target Turret on Selected Object** - same, restricted to turrets and launchers
+- **Target Shield Generator on Selected Object** - same, restricted to shield generators
+- **Target Active Mission Object** - the object your current mission points at
 
 These four are named after what they actually do: they work on the object **you have selected**, and on nothing else. Select a carrier across the sector and "Target Turret on Selected Object" gives you that carrier's turrets, not the turrets of the fighter next to you. If a surface element is already selected, they stay on the same hull, and so does Next/Previous. With nothing selected they use the last hull you worked on; with nothing selected and no previous hull they do nothing at all and tell you so, rather than grabbing a turret off whatever happens to be closest. Docked ships are never included either, so cycling a carrier's turrets will not wander into the fighters sitting in its bays.
 
 ### Navigation
 
-| Hotkey | What it does |
-|---|---|
-| Select Next Target \(Filtered\) | Next object in the active filter, by distance, wrapping around |
-| Select Previous Target \(Filtered\) | Previous object. With no target selected, starts from the farthest one |
-| Deselect Target and Reset Filter | Clears the target **and** the filter |
-| Target Along Line of Sight | Picks whatever you are looking at |
-| Narrow Filter to Selected Type | Pins the active filter to the type of the object you have selected |
+- **Select Next Target (Filtered)** - next object in the active filter, by distance, wrapping around
+- **Select Previous Target (Filtered)** - previous object. With no target selected, starts from the farthest one
+- **Deselect Target and Reset Filter** - clears the target **and** the filter
+- **Target Along Line of Sight** - picks whatever you are looking at
+- **Narrow Filter to Selected Type** - pins the active filter to the type of the object you have selected
 
 **Narrow Filter to Selected Type** needs a target that one of this mod's hotkeys put there: it reads the type off that target and adds it to the active filter, so Next/Previous and the automatic hand-over on a kill stay on that one type. It is a set-only key, not a toggle - press it a second time and nothing changes, because everything you can cycle to is already of that type. The narrowing goes away exactly when the filter itself does: any acquisition hotkey, the line-of-sight pick, "Deselect Target and Reset Filter", or any target change made outside this mod. With no filter active, or with nothing selected, the key does nothing and says so.
 
@@ -89,13 +85,11 @@ X4 already has a **Target Management** group under **Options > Controls**. Four 
 
 Recommendation: bind this mod's versions and clear the vanilla ones.
 
-| Vanilla control | This mod's replacement | Difference |
-|---|---|---|
-| Target Closest Hostile | Target Nearest Enemy | Also sets the filter; also finds mines and explosives |
-| Target Object | Target Along Line of Sight | Widening cone from dead centre instead of simply the closest object |
-| Next Target | Select Next Target | Cycles the filter, not everything |
-| Previous Target | Select Previous Target | Same |
-| Deselect Target | Deselect Target and Reset Filter | Also clears the filter |
+- **Target Closest Hostile** - replaced by **Target Nearest Enemy**, which also sets the filter and also finds mines and explosives
+- **Target Object** - replaced by **Target Along Line of Sight**, a widening cone from dead centre instead of simply the closest object
+- **Next Target** - replaced by **Select Next Target**, which cycles the filter, not everything
+- **Previous Target** - replaced by **Select Previous Target**, same
+- **Deselect Target** - replaced by **Deselect Target and Reset Filter**, which also clears the filter
 
 Two vanilla controls are left alone on purpose and remain useful alongside this mod:
 
@@ -106,21 +100,27 @@ Two vanilla controls are left alone on purpose and remain useful alongside this 
 
 Everything is configurable in game under **Options > Hotkey Management > Advanced Targeting Hotkeys**, reached from the same page you bind the keys on, rather than from a separate Extensions entry.
 
-| Section | Setting | Default | Effect |
-|---|---|---|---|
-| Hotkey Groups | Combat Targets | on | Register the four enemy/missile hotkeys |
-| | Own Fleet | on | Register the two own-ship hotkeys |
-| | Navigation Objects | on | Register the station and gate hotkeys |
-| | Resources | on | Register the collectable and asteroid hotkeys |
-| | Surface Elements | on | Register the four surface-element hotkeys |
-| | Mission Object | on | Register the mission-object hotkey |
-| Targeting | Keep the filter after acquiring a target | on | Turn off to make Next/Previous always cycle everything, vanilla-style |
-| | Extended range multiplier | `2` | How far beyond radar range large and already-known objects stay pickable |
-| | Own ships checked for a free dock | `12` | Caps the docking-bay scan behind "Target Nearest Own Ship for Landing" |
-| | Prefer visible surface elements when a target is lost | on | When a surface element is destroyed, hand over to one you have line of sight to rather than one hidden behind the hull |
-| Feedback | Play a sound | on | Confirmation blip on success, fail blip when nothing matched |
-| | Show a message when nothing is found | on | Names the category that came up empty, and the type when the filter is narrowed to one |
-| | Show a message when the filter is narrowed | on | Names the type the filter was just pinned to |
+**Hotkey Groups** - all on by default:
+
+- **Combat Targets** - register the four enemy/missile hotkeys
+- **Own Fleet** - register the two own-ship hotkeys
+- **Navigation Objects** - register the station and gate hotkeys
+- **Resources** - register the collectable and asteroid hotkeys
+- **Surface Elements** - register the four surface-element hotkeys
+- **Mission Object** - register the mission-object hotkey
+
+**Targeting**:
+
+- **Keep the filter after acquiring a target** - default on. Turn off to make Next/Previous always cycle everything, vanilla-style
+- **Extended range multiplier** - default `2`. How far beyond radar range large and already-known objects stay pickable
+- **Own ships checked for a free dock** - default `12`. Caps the docking-bay scan behind "Target Nearest Own Ship for Landing"
+- **Prefer visible surface elements when a target is lost** - default on. When a surface element is destroyed, hand over to one you have line of sight to rather than one hidden behind the hull
+
+**Feedback**:
+
+- **Play a sound** - default on. Confirmation blip on success, fail blip when nothing matched
+- **Show a message when nothing is found** - default on. Names the category that came up empty, and the type when the filter is narrowed to one
+- **Show a message when the filter is narrowed** - default on. Names the type the filter was just pinned to
 
 Turning a whole group off means those hotkeys are never registered, so they do not occupy one of the Native Hotkey API's 48 shared slots. Turning a group **on** takes effect immediately; turning one **off** only releases its slots on the next reload, because the Hotkey API's registry has no unregister path. To free a single hotkey's slot right away, disable it on the API's own **Hotkey Requests** page instead.
 
