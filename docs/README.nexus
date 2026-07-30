@@ -19,6 +19,7 @@ Losing a target is the one case where the filter is [i]not[/i] dropped. In the c
 [*] [b]The next one is selected automatically[/b], and "next" means the entry that followed the one you lost, not merely the closest one. Strip a hull of turrets, clear a wing of fighters, or fly through a field of dropped containers without touching the acquisition key again.
 [*] [b]Collectables count as lost when they are collected[/b], not only when they are shot, so chain-collecting drops works the same way.
 [*] [b]A ship that stops being an enemy counts as lost too.[/b] Shoot a fighter until its pilot bails out and the derelict is no longer hostile, so you move on to the next actual threat instead of staying locked onto an empty hull. The same applies to any ownership change. If the new owner is still hostile, nothing happens - your target was and remains valid.
+[*] [b]Surface elements you can actually shoot come first.[/b] Destroy a turret and the handover walks on from where you were and takes the first element you have a clear line of sight to, skipping the ones hidden behind the hull that you would have to fly around first. The check is the game's own ray cast, resolved the same way weapon aiming is, so "visible" means what it means when you pull the trigger. If every remaining element is blocked, you simply get the next one in order, so this never costs you a target. Turn it off in the settings if you would rather always have the strict next one.
 [*] [b]Running out of one type[/b] of surface element (say, the last engine) widens the filter to the remaining surface elements of that same hull rather than dumping you back out to free targeting.
 [*] [b]A hull stripped bare[/b] hands you the hull itself.
 [*] When the category is genuinely empty, [b]nothing happens at all[/b] - no sound, no message, and your target is left alone. This is a reaction to something dying, not to a key press, so it stays quiet.
@@ -229,6 +230,12 @@ Everything is configurable in game under [b]Options > Hotkey Management > Advanc
 [*] Setting: Own ships checked for a free dock
 [*] Default: [b]12[/b]
 [*] Effect: Caps the docking-bay scan behind "Target Nearest Own Ship for Landing"
+[/list]
+[*] Section: 
+[list]
+[*] Setting: Prefer visible surface elements when a target is lost
+[*] Default: on
+[*] Effect: When a surface element is destroyed, hand over to one you have line of sight to rather than one hidden behind the hull
 [/list]
 [*] Section: Feedback
 [list]
