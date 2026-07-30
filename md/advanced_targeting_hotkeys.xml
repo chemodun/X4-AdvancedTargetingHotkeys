@@ -1,39 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <mdscript name="AdvancedTargetingHotkeys" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <!--
-  Advanced Targeting Hotkeys.
+    Filtered target-acquisition hotkeys, registered through md.HotkeyApi.Register_Action
+    in area 'pilot'.
 
-  Registers filtered target-acquisition hotkeys through md.HotkeyApi.Register_Action
-  (area 'pilot' - the player is at the controls of a ship, no menu open; the API
-  itself guarantees that before any of these cues is signalled, so none of them
-  re-check it).
-
-  Central idea: every acquisition hotkey also sets a *sticky mode*. Next/Previous
-  then cycle only within that mode's candidate list - after "nearest station" they
-  cycle stations, after "nearest engine" they cycle that hull's engines, and so on.
-  The mode is dropped again as soon as the player changes target by any other means
-  (mouse, a vanilla targeting hotkey, target loss) - see On_Target_Changed.
-
-  Structure note: BuildCandidates is the single place that knows how to turn a mode
-  into a distance-sorted candidate group, and it is shared by acquisition, Next and
-  Previous alike. Adding a mode means one branch there plus one branch in
-  ResolveMode - nothing else.
-  -->
+    Every acquisition hotkey also sets a sticky mode, and Next/Previous then cycle only
+    within that mode until the player changes target by any other means. BuildCandidates
+    is the single place that turns a mode into a candidate group, so a new mode means one
+    branch there and one in ResolveMode.
+    -->
   <cues>
 
-    <!--
-      Reads (or initialises) mod config from player.entity.$AdvancedTargetingHotkeysConfig.
-      Leaves a local $config reference.
-
-      Ownership note: the authoritative store is __ADVANCED_TARGETING_HOTKEYS_DATA, a
-      userdata savedvariable owned by ui/advanced_targeting_hotkeys.lua, which mirrors
-      it into this blackboard var on every load and after every settings change. What
-      happens here is therefore a *fallback*, for the one moment it is needed: MD's
-      Register_On_Reloaded runs off the Reloaded cue, which is signalled just before
-      Lua's own Register_Request handler gets to sync - so on the very first pass of a
-      session the mirror may not exist yet. The defaults below match the Lua ones
-      exactly; anything written here is replaced by the real values moments later.
-      -->
+    <!-- Config mirror. The authoritative store is the Lua userdata savedvariable; these
+         defaults only cover the first registration pass of a session, which runs before
+         Lua has synced the mirror. -->
     <library name="LoadConfig" purpose="include_actions" version="1">
       <actions>
         <do_if value="@player.entity.$AdvancedTargetingHotkeysConfig == null">
@@ -93,18 +73,8 @@
       </actions>
     </library>
 
-    <!--
-      Runtime (non-settings) state, reset on every game start/load by Init_State.
-      Leaves a local $state reference. Every key is always present, so consumers
-      can test for null values without also having to test for a missing key.
-
-      $selfChange is the "this target change was mine" flag: set immediately
-      before the target is applied, cleared by On_Target_Changed. Without it,
-      our own set-target would look identical to a mouse click and would clear
-      the very mode we just established. Note it is cleared only by an event that
-      carries an object, never by the intermediate null one that precedes it when
-      a previous target is being replaced.
-      -->
+    <!-- Runtime state, reset by Init_State. Every key is always present, so consumers can
+         test for a null value without also testing for a missing key. -->
     <library name="LoadState" purpose="include_actions" version="1">
       <actions>
         <do_if value="@player.entity.$AdvancedTargetingHotkeysState == null">
@@ -124,10 +94,7 @@
       </actions>
     </library>
 
-    <!--
-      Wipes all sticky-mode state back to "free mode" (no filter).
-      Caller must already hold $state.
-      -->
+    <!-- Back to free mode. Caller must already hold $state. -->
     <library name="ResetMode" purpose="include_actions">
       <actions>
         <set_value name="$state.$mode" exact="null" />
@@ -137,22 +104,8 @@
       </actions>
     </library>
 
-    <!--
-      $mode -> $autoShift: does this mode replace a destroyed target automatically?
-
-      Deliberately not every mode. Things you shoot are worth chaining - the next
-      enemy, the next incoming missile, the next turret on the hull you are stripping.
-      Your own ships, stations, gates and asteroids are not: they are navigation
-      targets, and having one silently swapped for another because the first blew up
-      would be surprising rather than helpful.
-
-      Collectables ARE in the set, added 2026-07-30. They were held back on the
-      assumption that event_object_destroyed could not see them, which is half true: a
-      container leaves by being picked up, a lockbox or crate leaves by being shot. Both
-      exits are covered, because Target_Lost listens for event_object_picked_up as well
-      - see that cue. Chaining is the whole point of the mode: fly through one drop,
-      the next one is already selected.
-      -->
+    <!-- $mode -> $autoShift. Only things you shoot or fly through chain automatically;
+         silently swapping a navigation target for another would be surprising. -->
     <library name="IsAutoShiftMode" purpose="include_actions">
       <actions>
         <set_value name="$autoShift" exact="false" />
@@ -164,12 +117,8 @@
       </actions>
     </library>
 
-    <!--
-      Points the loss watcher at $armTarget, if $armMode is a mode that wants
-      auto-shift. Called from every place that establishes a new target, because both
-      events Target_Lost listens for resolve their object when the listener registers -
-      so the only way to follow a target that keeps changing is to re-arm on each change.
-      -->
+    <!-- Points the loss watcher at $armTarget. Re-armed on every target change, because
+         Target_Lost's events resolve their object when the listener registers. -->
     <library name="ArmLossWatch" purpose="include_actions">
       <actions>
         <set_value name="$autoShiftMode" exact="$armMode" />
@@ -181,11 +130,8 @@
       </actions>
     </library>
 
-    <!--
-      Common per-invocation scratch values every targeting cue needs:
-      $ownShip (the hull actually being flown), $radar (its radar range) and
-      $farRadar (the extended range large/known objects are still pickable at).
-      -->
+    <!-- $ownShip, $radar, and $farRadar - the extended range large or known objects stay
+         pickable at. -->
     <library name="LoadShipContext" purpose="include_actions">
       <actions>
         <set_value name="$ownShip" exact="@player.occupiedship" />
@@ -197,11 +143,7 @@
       </actions>
     </library>
 
-    <!--
-      Maps a registered hotkey id ($id) to its sticky mode ($mode).
-      'mission' is a pseudo-mode: it has no candidate list of its own and never
-      becomes sticky (see Acquire_Target_Cue).
-      -->
+    <!-- $id -> $mode. 'mission' is a pseudo-mode: no candidate list, never sticky. -->
     <library name="ResolveMode" purpose="include_actions">
       <actions>
         <set_value name="$mode" exact="null" />
@@ -253,22 +195,15 @@
       </actions>
     </library>
 
-    <!--
-      True (in $isSurfaceMode) if $mode is one of the four surface-element modes.
-      -->
+    <!-- Is $mode one of the four surface-element modes? -->
     <library name="IsSurfaceMode" purpose="include_actions">
       <actions>
         <set_value name="$isSurfaceMode" exact="$mode == 'surfaceAll' or $mode == 'surfaceEngines' or $mode == 'surfaceTurrets' or $mode == 'surfaceShields'" />
       </actions>
     </library>
 
-    <!--
-      Maps $mode back to the text id of the hotkey that establishes it, so the
-      "nothing found" notification can name the category the player actually asked
-      for. Reuses the action display names rather than needing its own set of
-      translated category labels. 0 means "no name" (free mode), which the caller
-      renders as the generic message instead.
-      -->
+    <!-- $mode -> the text id of the hotkey that establishes it, so a failure notification
+         can name the category asked for. 0 is free mode, rendered as the generic message. -->
     <library name="ResolveModeName" purpose="include_actions">
       <actions>
         <set_value name="$nameId" exact="0" />
@@ -320,17 +255,9 @@
       </actions>
     </library>
 
-    <!--
-      $element -> $elementHull: the ship or station a surface element belongs to.
-
-      NOT $element.parent. On a ship the immediate parent is the ship, but on a
-      station it is the MODULE the element sits on, which is neither radar-visible
-      nor a useful scope to iterate - so surface cycling died on stations the moment
-      the target became a surface element, while ships worked. .defensible resolves
-      straight to the owning ship or station, which is what vanilla itself uses on
-      surface elements (aiscripts/order.fight.lasertower.xml:52). .parent stays as a
-      fallback for the theoretical case of an element with no defensible context.
-      -->
+    <!-- $element -> $elementHull. Not .parent: on a station that is the MODULE, which is not
+         radar-visible, so surface cycling died on stations while ships worked. .defensible is
+         what vanilla uses on surface elements. -->
     <library name="ResolveHullOf" purpose="include_actions">
       <actions>
         <set_value name="$elementHull" exact="@$element.defensible" />
@@ -340,19 +267,9 @@
       </actions>
     </library>
 
-    <!--
-      Decides which hull's surface elements the surface modes should iterate,
-      leaving it in $parent (null if there is nothing usable).
-
-      Priority: the current target's hull if a surface element is targeted ->
-      the current target itself -> the hull remembered from the last surface
-      acquisition. Nothing else. There is deliberately NO "nearest visible hull"
-      fallback: these hotkeys act on the object you selected, and grabbing a turret
-      off some other ship merely because it happens to be closer is the same class of
-      wrong as substituting a station when you asked for a gate. With no target and
-      no remembered hull, $parent stays null, BuildCandidates returns an empty group
-      and ApplyTarget reports the failure without touching the current target.
-      -->
+    <!-- Which hull the surface modes iterate, in $parent. Target's hull -> target -> the hull
+         remembered from the last surface acquisition, and nothing else: no nearest-hull
+         fallback, since these hotkeys act on the object you selected. -->
     <library name="ResolveSurfaceParent" purpose="include_actions">
       <actions>
         <set_value name="$parent" exact="null" />
@@ -369,33 +286,20 @@
         <do_elseif value="$state.$surfaceParent != null">
           <set_value name="$parent" exact="$state.$surfaceParent" />
         </do_elseif>
-        <!--
-          Never iterate your own hull's elements: "target a turret" while flying is
-          about something you are shooting at, and the ship you are sitting in is
-          never that. Cannot happen through player.target, but a remembered hull
-          could in principle be one you have since boarded or teleported into.
-          -->
+        <!-- Never your own hull. Unreachable through player.target, but a remembered hull could
+             be a ship since boarded. -->
         <do_if value="$parent == $ownShip">
           <set_value name="$parent" exact="null" />
         </do_if>
-        <!--
-          Surface elements of something you cannot actually see are not pickable.
-          The @ guards the case where the remembered hull has since been destroyed.
-          -->
+        <!-- The @ guards a remembered hull that has since been destroyed. -->
         <do_if value="$parent != null and not (@$parent.isknown and @$parent.isradarvisible)">
           <set_value name="$parent" exact="null" />
         </do_if>
       </actions>
     </library>
 
-    <!--
-      Shared visibility rule, applied to $candidate, answering in $targetable.
-
-      Anything player-owned is always fair game; everything else has to be inside
-      radar range, with capital ships (and other genuinely large, always-rendered
-      things - stations and gates) allowed considerably further out. This is what
-      lets a station be picked across half a sector while a fighter cannot.
-      -->
+    <!-- $candidate -> $targetable. Player-owned is always fair game; anything else has to be
+         in radar range, with capitals, stations and gates allowed out to $farRadar. -->
     <library name="IsTargetable" purpose="include_actions">
       <actions>
         <set_value name="$targetable" exact="false" />
@@ -412,24 +316,11 @@
       </actions>
     </library>
 
-    <!--
-      Builds the distance-sorted candidate group $candidates for $mode.
-
-      There is exactly one fallback, and it stays strictly inside the category the
-      player asked for: a filtered surface mode that yields nothing widens to all
-      surface elements of the *same hull* (and downgrades $state accordingly), so
-      destroying the last engine leaves you cycling that hull's remaining elements
-      rather than dropping you out of surface mode entirely.
-
-      There is deliberately NO cross-category fallback. If the active filter has no
-      candidates, the group comes back empty and the caller reports failure - both
-      for acquisition and for Next/Previous. "Target nearest station" with no station
-      around, or Next while in station mode with none left, must never quietly hand
-      over an asteroid instead. Free mode ($mode == null) is not an exception to
-      this: its broad list is its own filter, not a substitute for someone else's.
-
-      Requires $config/$state/$ownShip/$radar/$farRadar to already be loaded.
-      -->
+    <!-- $mode -> distance-sorted $candidates. Needs $config/$state/$ownShip/$radar/$farRadar.
+         
+         The one fallback stays inside the category: a filtered surface mode with nothing left
+         widens to the same hull's remaining elements. Any other empty filter stays empty, and
+         the caller reports failure rather than handing over a different kind of object. -->
     <library name="BuildCandidates" purpose="include_actions">
       <actions>
         <create_group groupname="$candidates" />
@@ -474,7 +365,7 @@
           </do_all>
         </do_elseif>
 
-        <!-- Incoming only: a missile that is not aimed at the player is not a threat worth a key press. -->
+        <!-- Incoming only. -->
         <do_elseif value="$mode == 'missiles'">
           <find_object name="$found" class="[class.missile]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
             <match owner="faction.player" negate="true" />
@@ -497,11 +388,8 @@
           </do_all>
         </do_elseif>
 
-        <!--
-          One find_dockingbay call per examined ship is not cheap, and this runs on
-          every Next/Previous press too - so only the $dockableScanLimit nearest own
-          ships are examined at all.
-          -->
+        <!-- One find_dockingbay per ship is not cheap and this runs on every cycle press, so only
+             the $dockableScanLimit nearest are examined. -->
         <do_elseif value="$mode == 'ownDockable'">
           <find_ship_by_true_owner name="$found" faction="faction.player" class="[class.ship_s, class.ship_m, class.ship_l, class.ship_xl]" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
           <set_value name="$examined" exact="0" />
@@ -598,22 +486,13 @@
             </do_if>
           </do_if>
           <do_else>
-            <!--
-              Logged explicitly: an empty surface result with no line above it used to
-              be indistinguishable from "the hull has no elements left", which is what
-              made the station bug hard to read in a log.
-              -->
+            <!-- Tells "no hull" apart from "hull has nothing left" in the log. -->
             <debug_text text="'AdvancedTargetingHotkeys: no usable surface hull for mode %s, target %s'.[$mode, @player.target.debugname]"
               chance="$debugChance" filter="general" />
           </do_else>
         </do_elseif>
 
-        <!--
-          Free mode ($mode == null): no filter is active, so everything visible and
-          known is a candidate. This is free mode's OWN list, not a fallback - an
-          active filter that comes up empty deliberately stays empty, so the hotkey
-          reports failure instead of quietly substituting a different kind of object.
-          -->
+        <!-- Free mode's own list, not a fallback for anyone else's empty filter. -->
         <do_else>
           <find_object name="$found" class="[class.ship, class.station, class.highwayentrygate, class.gate, class.collectablewares, class.asteroid, class.missile, class.mine, class.explosive, class.lockbox, class.navbeacon, class.resourceprobe, class.satellite]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
             <match_attention min="attention.visible" />
@@ -627,33 +506,16 @@
       </actions>
     </library>
 
-    <!--
-      Applies $thing as the player's target (or reports failure when it is null),
-      and keeps the surface-element bookkeeping in $state in sync.
-
-      $targetingBackend picks how the target is actually set. 'lua' (the default)
-      routes through ui/advanced_targeting_hotkeys.lua's C.SetSofttarget, which is
-      what vanilla itself uses for component slots and therefore also works for
-      surface elements. 'md' uses the native <set_player_target> instead - fewer
-      moving parts, but unproven for surface elements, so it is opt-in.
-      -->
+    <!-- Applies $thing, or reports failure when it is null, keeping the surface bookkeeping in
+         sync. $targetingBackend 'lua' (default) goes through C.SetSofttarget, which vanilla
+         uses for component slots; 'md' uses set_player_target, unproven for surface elements. -->
     <library name="ApplyTarget" purpose="include_actions">
       <actions>
         <do_if value="$thing != null">
           <debug_text text="'AdvancedTargetingHotkeys: applying target %s, mode %s, backend %s'.[$thing.debugname, $mode, $config.$targetingBackend]"
             chance="$debugChance" filter="general" />
-          <!--
-            Re-selecting the object that is ALREADY targeted raises no
-            event_player_changed_target at all - observed 2026-07-30, an acquisition
-            whose nearest candidate was the current target logged "applying target"
-            with no target-changed pair after it. Claiming that change would leave
-            $selfChange set with nothing to consume it, and the next genuine external
-            pick would then be read as ours and keep a mode the player has left.
-            So the flag is only raised when a change will actually be raised.
-            The bookkeeping below still runs either way: mode, surface state and the
-            loss watcher must end up in the same place whether or not the engine had
-            anything to do.
-            -->
+          <!-- Re-selecting the current target raises no event, so $selfChange would stay set and
+               swallow the next external change. -->
           <set_value name="$applyChanged" exact="$thing != player.target" />
           <do_if value="$applyChanged">
             <set_value name="$state.$selfChange" exact="true" />
@@ -677,7 +539,7 @@
           <do_else>
             <set_value name="$state.$surfaceTarget" exact="null" />
           </do_else>
-          <!-- Follow this target, so its destruction can hand over to the next one. -->
+          <!-- Follow it, so its loss can hand over to the next one. -->
           <set_value name="$armTarget" exact="$thing" />
           <set_value name="$armMode" exact="$mode" />
           <include_actions ref="ArmLossWatch" />
@@ -686,11 +548,6 @@
           </do_if>
         </do_if>
         <do_else>
-          <!--
-            Nothing matched. The target is left exactly as it was - no substitute
-            pick - and the player is told which category came up empty, so a silent
-            "the key did nothing" is never ambiguous.
-            -->
           <set_value name="$applyChanged" exact="false" />
           <debug_text text="'AdvancedTargetingHotkeys: nothing matched for mode %s, target left unchanged'.[$mode]"
             chance="$debugChance" filter="general" />
@@ -710,11 +567,8 @@
       </actions>
     </library>
 
-    <!--
-      Runtime state is deliberately not carried across a load: a remembered hull or
-      surface element from another session is meaningless, and starting in free mode
-      is always a valid state.
-      -->
+    <!-- Runtime state is not carried across a load: a hull remembered from another session is
+         meaningless. -->
     <cue name="Init_State" instantiate="true">
       <conditions>
         <check_any>
@@ -729,12 +583,8 @@
       </actions>
     </cue>
 
-    <!--
-      Registrations must be re-sent on every Reloaded, since cue references do not
-      survive a Lua reload. Group toggles gate registration itself rather than
-      execution: a disabled group never claims one of the API's 48 shared pool
-      slots in the first place.
-      -->
+    <!-- Cue references do not survive a Lua reload, so registrations are re-sent on every
+         Reloaded. A disabled group never claims one of the API's 48 shared slots. -->
     <cue name="Register_On_Reloaded" instantiate="true">
       <conditions>
         <event_cue_signalled cue="md.HotkeyApi.Reloaded" />
@@ -748,7 +598,7 @@
           $config.$groupResourcesEnabled, $config.$groupSurfaceEnabled, $config.$groupMissionEnabled]"
           chance="$debugChance" filter="general" />
 
-        <!-- Navigation and utility - always available, they are what makes the modes usable. -->
+        <!-- Navigation and utility: always registered. -->
         <signal_cue_instantly
           cue="md.HotkeyApi.Register_Action"
           param="table[
@@ -964,10 +814,7 @@
       </actions>
     </cue>
 
-    <!--
-      Every "target nearest X" hotkey, plus the mission-object one. Which one fired
-      is read from event.param.$id, so one cue covers all fifteen ids.
-      -->
+    <!-- Every "target nearest X" hotkey plus the mission one; event.param.$id says which. -->
     <cue name="Acquire_Target_Cue" instantiate="true" namespace="this">
       <conditions>
         <event_cue_signalled />
@@ -997,10 +844,7 @@
           </do_if>
           <include_actions ref="ApplyTarget" />
           <do_if value="$thing != null">
-            <!--
-              BuildCandidates may have downgraded $mode (filtered surface mode with
-              nothing left), so $mode is read back here rather than reusing the id.
-              -->
+            <!-- BuildCandidates may have downgraded $mode, so read it back instead of reusing the id. -->
             <set_value name="$state.$mode" exact="$mode" />
             <include_actions ref="IsSurfaceMode" />
             <do_if value="$isSurfaceMode">
@@ -1011,10 +855,7 @@
       </actions>
     </cue>
 
-    <!--
-      Next / Previous. Both rebuild the active mode's list and step through it, so
-      the list always reflects the current situation rather than a stale snapshot.
-      -->
+    <!-- Next / Previous. The list is rebuilt per press, never snapshotted. -->
     <cue name="Cycle_Target_Cue" instantiate="true" namespace="this">
       <conditions>
         <event_cue_signalled />
@@ -1070,10 +911,7 @@
       </actions>
     </cue>
 
-    <!--
-      Deselect. Unlike vanilla's own Deselect Target this also drops the sticky
-      mode, which is the whole reason it exists as a separate hotkey.
-      -->
+    <!-- Deselect. Unlike vanilla's own, this also drops the sticky mode. -->
     <cue name="Clear_Target_Cue" instantiate="true" namespace="this">
       <conditions>
         <event_cue_signalled />
@@ -1090,26 +928,14 @@
           <raise_lua_event name="'AdvancedTargetingHotkeys.ClearTarget'" />
         </do_else>
         <include_actions ref="ResetMode" />
-        <!--
-          No $selfChange flag here on purpose. A clear raises exactly one event, with
-          param null, and the flag is only consumed by an event carrying an object -
-          setting it would leave it stuck and swallow the next genuine external change.
-          Not needed either: everything is already reset, so On_Target_Changed's own
-          null branch just runs ResetMode a second time, which is a no-op.
-          -->
+        <!-- No $selfChange here: a clear raises one event with param null, which never consumes
+             the flag, so it would stay stuck. -->
       </actions>
     </cue>
 
-    <!--
-      Line-of-sight pick: start dead centre and widen the cone in steps until
-      something is found, so a target actually under the crosshair always wins over
-      one merely somewhere ahead of the ship.
-
-      Surface elements get their own sweep per step, with a distance cap that
-      shrinks as the cone widens - a wide cone at long range would otherwise pick a
-      random turret on a distant station over the ship you are looking at.
-      $surfaceRanges entry 0m means "no surface sweep at this angle".
-      -->
+    <!-- Widening-cone pick. Surface elements get their own sweep per step, capped shorter as
+         the cone widens, or a wide cone would pick a distant station's turret over the ship
+         ahead. A 0m range means no surface sweep at that angle. -->
     <cue name="Line_Of_Sight_Cue" instantiate="true" namespace="this">
       <conditions>
         <event_cue_signalled />
@@ -1120,8 +946,7 @@
         <include_actions ref="LoadShipContext" />
 
         <include_actions ref="md.HotkeyApi.GetDebugChance" />
-        <!-- Not a filtered mode: whatever is under the crosshair wins, whatever it is.
-             ApplyTarget reads $mode when reporting failure, so it has to be set. -->
+        <!-- Not a filtered mode, but ApplyTarget reads $mode when reporting failure. -->
         <set_value name="$mode" exact="null" />
         <set_value name="$angles" exact="[1deg, 3deg, 5deg, 10deg, 25deg]" />
         <set_value name="$surfaceRanges" exact="[8km, 4km, 2km, 0m, 1km]" />
@@ -1193,16 +1018,9 @@
       </actions>
     </cue>
 
-    <!--
-      Sticky-mode invalidation. Anything that changes the target without going
-      through this mod (mouse click, a vanilla targeting hotkey, the target being
-      destroyed or leaving the sector) drops the filter, so Next/Previous go back to
-      cycling everything instead of silently staying in a mode the player has left.
-
-      The one exception: losing a surface element keeps surface mode alive, so
-      chewing through a hull for boarding does not kick you out of it after each
-      kill - BuildCandidates then re-picks from whatever the hull still has.
-      -->
+    <!-- Sticky-mode invalidation: a target change this mod did not make drops the filter.
+         Exception - losing a surface element keeps surface mode, so chewing through a hull
+         does not kick you out after every kill. -->
     <cue name="On_Target_Changed" instantiate="true" namespace="this">
       <conditions>
         <event_player_changed_target />
@@ -1212,25 +1030,16 @@
         <include_actions ref="md.HotkeyApi.GetDebugChance" />
         <debug_text text="'AdvancedTargetingHotkeys: target changed to %s, ours: %s, mode %s'.[@event.param.debugname, $state.$selfChange, $state.$mode]"
           chance="$debugChance" filter="general" />
-        <!-- Full surface state, so the branch taken below can be read straight off the log. -->
+        <!-- Surface state, so the branch taken below can be read off the log. -->
         <debug_text text="'AdvancedTargetingHotkeys: changed detail - t %s, issurface %s, sTarget %s, sParent %s, sMode %s, age %s'.[@event.param.debugname, @event.param.issurfaceelement, @$state.$surfaceTarget.debugname, @$state.$surfaceParent.debugname, $state.$surfaceMode, player.age]"
           chance="$debugChance" filter="general" />
         <do_if value="$state.$selfChange">
-          <!--
-            Replacing an existing target raises TWO events: the old target being
-            dropped, param null, and only then the new one. The flag must survive
-            the first or the second looks external and clears the mode we just set,
-            so it is consumed by the first event carrying an actual object.
-            -->
+          <!-- Replacing a target raises TWO events, param null and then the new object, so the flag
+               is consumed only by the one carrying an object. -->
           <do_if value="event.param != null">
             <set_value name="$state.$selfChange" exact="false" />
-            <!--
-              A shift applied from the pending branch below arrives here rather than
-              there, because that apply set $selfChange on its way out and this branch
-              outranks it. Release the hold on our own object, and only on it: when the
-              engine injects a replacement of its own it is this branch that consumes
-              $selfChange, and that event must not be mistaken for the shift landing.
-              -->
+            <!-- A shift lands here rather than in the pending branch, since its own apply set
+                 $selfChange. Release on our object only: the engine's replacement consumes the flag too. -->
             <do_if value="$state.$shiftPending and event.param == $state.$shiftApplied">
               <debug_text text="'AdvancedTargetingHotkeys: shift landed on %s, releasing hold on mode %s'.[@event.param.debugname, $state.$mode]"
                 chance="$debugChance" filter="general" />
@@ -1240,30 +1049,9 @@
           </do_if>
         </do_if>
         <do_elseif value="$state.$shiftPending and player.age - $state.$shiftAt lt 2s">
-          <!--
-            Our tracked target left the world and Target_Lost queued its replacement.
-            This is where that replacement is applied - on the engine's own event rather
-            than after a guessed delay, so it always lands strictly after the engine has
-            finished reacting to the loss.
-
-            All ordinary invalidation is suppressed while the flag is up, because every
-            event this loss produces would otherwise destroy the very mode the shift
-            needs: the transient null runs ResetMode for every non-surface mode, and the
-            engine's own arbitrary replacement - which it supplies on some kills and not
-            others - runs it for anything that is not a surface element.
-
-            The flag deliberately survives the apply, and is cleared only by the event
-            carrying the object we ourselves applied. $selfChange cannot do that job
-            here: it is one-shot, and when the engine injects a replacement the queue is
-            null, engine-pick, our-pick - so $selfChange would be spent on the engine's
-            event and OUR change would then read as external and reset the mode.
-
-            The 2s bound on the condition above is the wedge guard. If the target we
-            apply never produces an event at all, the flag would otherwise suppress
-            invalidation for the rest of the session; instead the next target change
-            after that window falls through to normal handling. A stale flag is inert
-            until a target change arrives, so no timer is needed to police it.
-            -->
+          <!-- Apply the replacement Target_Lost queued, on the engine's own event. Invalidation stays
+               suppressed until $shiftApplied comes back, since the transient null would otherwise reset
+               the mode the shift needs; the 2s bound unwedges the flag if that event never arrives. -->
           <do_if value="$state.$shiftTarget != null">
             <set_value name="$thing" exact="$state.$shiftTarget" />
             <set_value name="$state.$shiftTarget" exact="null" />
@@ -1274,12 +1062,8 @@
             <include_actions ref="LoadConfig" />
             <include_actions ref="ApplyTarget" />
             <do_if value="not $applyChanged">
-              <!--
-                The engine had already installed this very object as its own
-                replacement, so our apply is a no-op and no event will arrive to
-                release the hold. Release it here instead of leaving it to the 2s
-                wedge guard, which would suppress genuine target changes until then.
-                -->
+              <!-- Engine already picked this object, so no event will arrive to
+                   release the hold. -->
               <debug_text text="'AdvancedTargetingHotkeys: shift target %s was already selected, releasing hold on mode %s'.[$thing.debugname, $state.$mode]"
                 chance="$debugChance" filter="general" />
               <set_value name="$state.$shiftPending" exact="false" />
@@ -1300,15 +1084,8 @@
         <do_else>
           <do_if value="event.param == null">
             <do_if value="$state.$surfaceTarget != null and $state.$surfaceParent != null">
-              <!--
-                The branch a destroyed surface element lands in - verified in-game
-                2026-07-29. Load-bearing, and not just for tidiness: the game itself
-                re-targets another element on the same hull within the same instant,
-                so this null is only ever transient. Running ResetMode here would wipe
-                $surfaceMode, and the replacement event arriving right after would then
-                find it null, default to surfaceAll, and silently drop the player's
-                engines-only or turrets-only filter.
-                -->
+              <!-- Where a destroyed surface element lands. ResetMode here would wipe $surfaceMode, and a
+                   replacement arriving right after would silently drop the filter to surfaceAll. -->
               <debug_text text="'AdvancedTargetingHotkeys: branch - surface element lost, was %s on hull %s, keeping mode %s'.[@$state.$surfaceTarget.debugname, @$state.$surfaceParent.debugname, $state.$surfaceMode]"
                 chance="$debugChance" filter="general" />
               <set_value name="$state.$surfaceTarget" exact="null" />
@@ -1347,13 +1124,8 @@
       </actions>
     </cue>
 
-    <!--
-      Holder for the object the destruction watcher is currently bound to. A root cue
-      with no conditions, so its actions run once at game start; $watched is written by
-      ArmLossWatch from then on. It has to be a cue variable rather than part of
-      $state because event_object_destroyed resolves its object attribute when the
-      listener registers, and only a cue-scoped expression is available at that point.
-      -->
+    <!-- Holds the object the loss watcher is bound to. Has to be a cue variable rather than
+         $state, because the event resolves its object attribute when the listener registers. -->
     <cue name="Watch_Holder">
       <actions>
         <set_value name="$watched" exact="null" />
@@ -1361,62 +1133,19 @@
     </cue>
 
     <!--
-      The current target stopped being a valid member of the active filter. FOUR events,
-      in two families that need different handling:
+      The target stopped being a valid member of the active filter. Four events, two families.
 
-      Family A - the object leaves the world outright:
-        event_object_destroyed  - shot to pieces.        param = killer.
-        event_object_picked_up  - collected by someone.  param = collector.
+      A - the object leaves the world: event_object_destroyed, event_object_picked_up.
+          Collectables need both, since a container is collected and a lockbox is shot.
+      B - it stays but drops out of the filter: event_object_abandoned,
+          event_object_changed_owner. Nothing in A fires for a bailed-out hull.
 
-      Family B - the object stays, but stops belonging to the filter:
-        event_object_abandoned      - its NPCs bailed out. No param.
-        event_object_changed_owner  - param = new owner faction, param2 = previous.
+      check="false" suppresses the "event object does not exist" error a null
+      Watch_Holder.$watched raises at registration. event.object is the lost object in all four.
 
-      Family A: a container leaves by being picked up, a lockbox or a wreck leaves by
-      being destroyed, and the collectables mode covers both kinds - so listening for
-      only one would make that mode work for half its own candidate list. Vanilla pairs
-      exactly these two for the same question at aiscripts/move.collect.drone.xml:57-65.
-
-      Family B is the abandoned-ship case: shoot a fighter until its pilot bails and the
-      hull becomes ownerless. It is no longer hostile, so it drops straight out of the
-      enemy filter - but it is still a perfectly real object sitting in space, so nothing
-      in family A ever fires and the player is left locked onto a derelict while the
-      fight continues around them. Vanilla treats these three as one condition for the
-      same kind of question in md/encounters.xml. event_object_changed_true_owner is
-      deliberately NOT included: it fires for the same handovers as changed_owner in the
-      cases that matter here, so it would mostly duplicate.
-
-      Multiple events under check_any in one MD cue is ordinary usage. check="false" only
-      suppresses the "event object does not exist" error, which Watch_Holder.$watched
-      being null would otherwise produce on every registration. event.object is the lost
-      object in all four, so the body below is shared.
-
-      THE TWO FAMILIES READ THE SAME TEST IN OPPOSITE DIRECTIONS. Family A guarantees the
-      object is on its way out, so finding it still in the candidate list is the useful
-      accident this whole design rests on: it still has an index, so the entry that
-      FOLLOWS it is knowable, and that is what "next" means. Family B guarantees nothing
-      of the sort - an ownership change from one hostile faction to another leaves the
-      target perfectly valid, and shifting away from it would be wrong. So for family B,
-      "still in the list" means the opposite of what it means for family A: it means
-      there is nothing to do at all. Hence $objectGone.
-
-      THEY ALSO APPLY AT DIFFERENT TIMES, and that is the other half of $objectGone's job.
-      Family B applies immediately, right here, exactly like a hotkey press - the object
-      never left the world, so the engine raises nothing about it and there is nothing to
-      sit out. Family A queues into $state.$shiftTarget and lets On_Target_Changed apply
-      it when the engine's own event arrives, which is strictly after the engine has
-      finished reacting to the loss. Waiting for that event in family B would be waiting
-      for something that never comes; applying immediately in family A would be a race
-      against the engine's own retargeting.
-
-      NOTE that "still findable at event time" is measured for kills only; if a picked-up
-      container is already gone from find_object by the time its event lands, $index
-      comes back 0 and the from-the-front path takes over. That degrades to nearest
-      rather than breaking, and the log line says which happened.
-
-      The pick is stored as the object rather than as an index, so re-sorting before it
-      is applied - the list is ordered by distance and the player is moving - cannot make
-      it point at something else.
+      $objectGone splits the families, which read the same test in opposite directions: in A,
+      still being in the list is what makes the successor knowable; in B it means the target is
+      still valid and nothing should move. A queues for On_Target_Changed, B applies here.
       -->
     <cue name="Target_Lost" instantiate="true" namespace="this">
       <conditions>
@@ -1446,9 +1175,7 @@
           <set_value name="$thing" exact="null" />
 
           <do_if value="$index gt 0 and not $objectGone">
-            <!-- Family B, still a valid candidate: an owner handover between two
-                 hostile factions, or an abandonment the filter does not care about.
-                 Nothing has been lost, so leave the target exactly as it is. -->
+            <!-- Family B, still valid - an owner handover between hostiles. Leave the target alone. -->
             <debug_text text="'AdvancedTargetingHotkeys: target still matches mode %s after %s, no shift'.[$mode, event.name]"
               chance="$debugChance" filter="general" />
           </do_if>
@@ -1458,10 +1185,8 @@
                 <set_value name="$thing" exact="$candidates.{$index + 1}" />
               </do_if>
               <do_else>
-                <!-- Either it was the last entry, so wrap exactly as Next does, or it
-                     is not in this list at all - family B always lands here, since
-                     dropping out of the filter is the very reason it fired - and then
-                     there is no position to resume from. Both start from the front. -->
+                <!-- Last entry, or not in this list at all, which is always the case for family B.
+                     Both resume from the front. -->
                 <set_value name="$thing" exact="$candidates.{1}" />
               </do_else>
               <do_if value="$thing == event.object">
@@ -1471,12 +1196,7 @@
             </do_if>
 
             <do_if value="$thing == null and $state.$surfaceParent != null">
-              <!--
-                Last step of the surface chain. BuildCandidates has already widened a
-                filtered mode to every remaining element on the hull, so getting here
-                means the hull has been stripped bare - fall back to the hull itself
-                rather than dropping the player's target entirely.
-                -->
+              <!-- Hull stripped bare: fall back to the hull itself rather than dropping the target. -->
               <do_if value="@$state.$surfaceParent.isknown and @$state.$surfaceParent.isradarvisible">
                 <set_value name="$thing" exact="$state.$surfaceParent" />
                 <debug_text text="'AdvancedTargetingHotkeys: hull %s has no elements left, falling back to the hull itself'.[$state.$surfaceParent.debugname]"
@@ -1485,12 +1205,7 @@
             </do_if>
 
             <do_if value="$thing != null and not $objectGone">
-              <!--
-                FAMILY B APPLIES RIGHT HERE, exactly like a hotkey press. The object did
-                not leave the world, it only left the filter, so the engine is not about
-                to raise anything about it - there is no null to sit out and nothing to
-                race. Waiting would mean waiting for an event that never comes.
-                -->
+              <!-- Family B applies here. Nothing left the world, so no engine event is coming to wait for. -->
               <debug_text text="'AdvancedTargetingHotkeys: shifting to %s, mode %s, %s candidates'.[$thing.debugname, $mode, $candidates.count]"
                 chance="$debugChance" filter="general" />
               <include_actions ref="ApplyTarget" />
@@ -1502,19 +1217,12 @@
               </do_if>
             </do_if>
             <do_elseif value="$thing != null">
-              <!--
-                FAMILY A QUEUES INSTEAD. The object is on its way out, so the engine is
-                about to raise event_player_changed_target - a null, and on some kills a
-                replacement of its own. On_Target_Changed's pending branch applies this
-                there, which is strictly after the engine has had its say rather than a
-                guess at how long that takes.
-                -->
+              <!-- Family A queues instead, for On_Target_Changed to apply once the engine has had its say. -->
               <set_value name="$state.$shiftTarget" exact="$thing" />
               <set_value name="$state.$shiftPending" exact="true" />
               <set_value name="$state.$shiftAt" exact="player.age" />
-              <!-- Persisted now rather than at apply time: BuildCandidates may have
-                   downgraded a filtered surface mode to surfaceAll while picking, and
-                   the pending branch only applies the object, not the mode. -->
+              <!-- BuildCandidates may have downgraded the mode, and the pending branch applies only the
+                   object. -->
               <set_value name="$state.$mode" exact="$mode" />
               <include_actions ref="IsSurfaceMode" />
               <do_if value="$isSurfaceMode">
@@ -1524,17 +1232,9 @@
                 chance="$debugChance" filter="general" />
             </do_elseif>
             <do_else>
-              <!--
-                Nothing to shift to. Silent on purpose: no fail sound and no ticker,
-                which is why ApplyTarget - whose else branch does both - is not called at
-                all here. This is a passive reaction to a target dying, being collected
-                or changing hands, not a key press, and announcing "no matching target
-                found" after the last kill of every fight would be noise.
-
-                $shiftPending is deliberately NOT raised: with nothing queued there would
-                be nothing to clear it, and On_Target_Changed would swallow every later
-                target change. Normal invalidation runs instead.
-                -->
+              <!-- Nothing to shift to, and silent on purpose - this is a reaction to a kill, not a key
+                   press - so ApplyTarget, whose else branch sounds and notifies, is not called. $shiftPending
+                   stays down: with nothing queued, nothing would clear it. -->
               <debug_text text="'AdvancedTargetingHotkeys: nothing left to shift to for mode %s, leaving target alone'.[$mode]"
                 chance="$debugChance" filter="general" />
             </do_else>
