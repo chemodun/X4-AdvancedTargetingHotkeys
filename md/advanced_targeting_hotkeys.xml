@@ -642,12 +642,31 @@
         <do_if value="$thing != null">
           <debug_text text="'AdvancedTargetingHotkeys: applying target %s, mode %s, backend %s'.[$thing.debugname, $mode, $config.$targetingBackend]"
             chance="$debugChance" filter="general" />
-          <set_value name="$state.$selfChange" exact="true" />
-          <do_if value="$config.$targetingBackend == 'md'">
-            <set_player_target object="$thing" />
+          <!--
+            Re-selecting the object that is ALREADY targeted raises no
+            event_player_changed_target at all - observed 2026-07-30, an acquisition
+            whose nearest candidate was the current target logged "applying target"
+            with no target-changed pair after it. Claiming that change would leave
+            $selfChange set with nothing to consume it, and the next genuine external
+            pick would then be read as ours and keep a mode the player has left.
+            So the flag is only raised when a change will actually be raised.
+            The bookkeeping below still runs either way: mode, surface state and the
+            loss watcher must end up in the same place whether or not the engine had
+            anything to do.
+            -->
+          <set_value name="$applyChanged" exact="$thing != player.target" />
+          <do_if value="$applyChanged">
+            <set_value name="$state.$selfChange" exact="true" />
+            <do_if value="$config.$targetingBackend == 'md'">
+              <set_player_target object="$thing" />
+            </do_if>
+            <do_else>
+              <raise_lua_event name="'AdvancedTargetingHotkeys.SetTarget'" param="$thing" />
+            </do_else>
           </do_if>
           <do_else>
-            <raise_lua_event name="'AdvancedTargetingHotkeys.SetTarget'" param="$thing" />
+            <debug_text text="'AdvancedTargetingHotkeys: target %s is already selected, no change to raise'.[$thing.debugname]"
+              chance="$debugChance" filter="general" />
           </do_else>
           <do_if value="$thing.issurfaceelement">
             <set_value name="$state.$surfaceTarget" exact="$thing" />
@@ -672,6 +691,7 @@
             pick - and the player is told which category came up empty, so a silent
             "the key did nothing" is never ambiguous.
             -->
+          <set_value name="$applyChanged" exact="false" />
           <debug_text text="'AdvancedTargetingHotkeys: nothing matched for mode %s, target left unchanged'.[$mode]"
             chance="$debugChance" filter="general" />
           <do_if value="$config.$soundEnabled">
@@ -1253,6 +1273,18 @@
               chance="$debugChance" filter="general" />
             <include_actions ref="LoadConfig" />
             <include_actions ref="ApplyTarget" />
+            <do_if value="not $applyChanged">
+              <!--
+                The engine had already installed this very object as its own
+                replacement, so our apply is a no-op and no event will arrive to
+                release the hold. Release it here instead of leaving it to the 2s
+                wedge guard, which would suppress genuine target changes until then.
+                -->
+              <debug_text text="'AdvancedTargetingHotkeys: shift target %s was already selected, releasing hold on mode %s'.[$thing.debugname, $state.$mode]"
+                chance="$debugChance" filter="general" />
+              <set_value name="$state.$shiftPending" exact="false" />
+              <set_value name="$state.$shiftApplied" exact="null" />
+            </do_if>
           </do_if>
           <do_elseif value="event.param != null and event.param == $state.$shiftApplied">
             <debug_text text="'AdvancedTargetingHotkeys: shift landed on %s, releasing hold on mode %s'.[@event.param.debugname, $state.$mode]"
