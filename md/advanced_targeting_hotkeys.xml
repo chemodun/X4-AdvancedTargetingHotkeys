@@ -1062,12 +1062,19 @@
             <include_actions ref="LoadConfig" />
             <include_actions ref="ApplyTarget" />
             <do_if value="not $applyChanged">
-              <!-- Engine already picked this object, so no event will arrive to
-                   release the hold. -->
-              <debug_text text="'AdvancedTargetingHotkeys: shift target %s was already selected, releasing hold on mode %s'.[$thing.debugname, $state.$mode]"
-                chance="$debugChance" filter="general" />
-              <set_value name="$state.$shiftPending" exact="false" />
-              <set_value name="$state.$shiftApplied" exact="null" />
+              <!-- The engine picked this object itself. Release only when this event is the one
+                   carrying it - otherwise its event is still in flight and must be the one to
+                   release, or it reads as an external pick and resets the mode. -->
+              <do_if value="event.param == $thing">
+                <debug_text text="'AdvancedTargetingHotkeys: shift target %s was already selected, releasing hold on mode %s'.[$thing.debugname, $state.$mode]"
+                  chance="$debugChance" filter="general" />
+                <set_value name="$state.$shiftPending" exact="false" />
+                <set_value name="$state.$shiftApplied" exact="null" />
+              </do_if>
+              <do_else>
+                <debug_text text="'AdvancedTargetingHotkeys: shift target %s already picked by the engine, holding for its event, mode %s'.[$thing.debugname, $state.$mode]"
+                  chance="$debugChance" filter="general" />
+              </do_else>
             </do_if>
           </do_if>
           <do_elseif value="event.param != null and event.param == $state.$shiftApplied">
