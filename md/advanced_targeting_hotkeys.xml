@@ -114,6 +114,8 @@
             $surfaceParent = null,
             $surfaceTarget = null,
             $selfChange    = false,
+            $shiftPending  = false,
+            $shiftTarget   = null,
           ]" />
         </do_if>
         <set_value name="$state" exact="player.entity.$AdvancedTargetingHotkeysState" />
@@ -130,6 +132,44 @@
         <set_value name="$state.$surfaceMode" exact="null" />
         <set_value name="$state.$surfaceParent" exact="null" />
         <set_value name="$state.$surfaceTarget" exact="null" />
+      </actions>
+    </library>
+
+    <!--
+      $mode -> $autoShift: does this mode replace a destroyed target automatically?
+
+      Deliberately not every mode. Things you shoot are worth chaining - the next
+      enemy, the next incoming missile, the next turret on the hull you are stripping.
+      Your own ships, stations, gates and asteroids are not: they are navigation
+      targets, and having one silently swapped for another because the first blew up
+      would be surprising rather than helpful. Collectables are a separate case still
+      to do - they leave by being *collected*, not destroyed, so event_object_destroyed
+      probably does not cover them at all.
+      -->
+    <library name="IsAutoShiftMode" purpose="include_actions">
+      <actions>
+        <set_value name="$autoShift" exact="false" />
+        <do_if value="$autoShiftMode == 'enemyAll' or $autoShiftMode == 'enemySmall' or $autoShiftMode == 'enemyLarge' or $autoShiftMode == 'missiles'
+                   or $autoShiftMode == 'surfaceAll' or $autoShiftMode == 'surfaceEngines' or $autoShiftMode == 'surfaceTurrets' or $autoShiftMode == 'surfaceShields'">
+          <set_value name="$autoShift" exact="true" />
+        </do_if>
+      </actions>
+    </library>
+
+    <!--
+      Points the destruction watcher at $armTarget, if $armMode is a mode that wants
+      auto-shift. Called from every place that establishes a new target, because
+      event_object_destroyed resolves its object when the listener registers - so the
+      only way to follow a target that keeps changing is to re-arm on each change.
+      -->
+    <library name="ArmDestructionWatch" purpose="include_actions">
+      <actions>
+        <set_value name="$autoShiftMode" exact="$armMode" />
+        <include_actions ref="IsAutoShiftMode" />
+        <do_if value="$autoShift and $armTarget != null">
+          <set_value name="Watch_Holder.$watched" exact="$armTarget" />
+          <reset_cue cue="Target_Destroyed" />
+        </do_if>
       </actions>
     </library>
 
@@ -610,6 +650,10 @@
           <do_else>
             <set_value name="$state.$surfaceTarget" exact="null" />
           </do_else>
+          <!-- Follow this target, so its destruction can hand over to the next one. -->
+          <set_value name="$armTarget" exact="$thing" />
+          <set_value name="$armMode" exact="$mode" />
+          <include_actions ref="ArmDestructionWatch" />
           <do_if value="$config.$soundEnabled">
             <play_sound sound="'ui_target_set'" type="ui" />
           </do_if>
@@ -1140,6 +1184,9 @@
         <include_actions ref="md.HotkeyApi.GetDebugChance" />
         <debug_text text="'AdvancedTargetingHotkeys: target changed to %s, ours: %s, mode %s'.[event.param, $state.$selfChange, $state.$mode]"
           chance="$debugChance" filter="general" />
+        <!-- Full surface state, so the branch taken below can be read straight off the log. -->
+        <debug_text text="'AdvancedTargetingHotkeys: changed detail - t %s, issurface %s, sTarget %s, sParent %s, sMode %s, age %s'.[event.param, @event.param.issurfaceelement, $state.$surfaceTarget, @$state.$surfaceParent.knownname, $state.$surfaceMode, player.age]"
+          chance="$debugChance" filter="general" />
         <do_if value="$state.$selfChange">
           <!--
             Replacing an existing target raises TWO events: the old target being
@@ -1151,19 +1198,47 @@
             <set_value name="$state.$selfChange" exact="false" />
           </do_if>
         </do_if>
+        <do_elseif value="$state.$shiftPending">
+          <!--
+            Our tracked target was destroyed and Auto_Shift_Cue is about to replace it.
+            All invalidation is suppressed until then, because both of the events this
+            death produces would otherwise destroy the very mode the shift needs: the
+            transient null runs ResetMode for every non-surface mode, and the engine's
+            own arbitrary replacement - which it supplies on some kills and not others -
+            runs it for anything that is not a surface element. The shift owns the mode
+            for these few frames and clears the flag itself.
+            -->
+          <debug_text text="'AdvancedTargetingHotkeys: shift pending, ignoring target change to %s, holding mode %s'.[event.param, $state.$mode]"
+            chance="$debugChance" filter="general" />
+        </do_elseif>
         <do_else>
           <do_if value="event.param == null">
             <do_if value="$state.$surfaceTarget != null and $state.$surfaceParent != null">
+              <!--
+                The branch a destroyed surface element lands in - verified in-game
+                2026-07-29. Load-bearing, and not just for tidiness: the game itself
+                re-targets another element on the same hull within the same instant,
+                so this null is only ever transient. Running ResetMode here would wipe
+                $surfaceMode, and the replacement event arriving right after would then
+                find it null, default to surfaceAll, and silently drop the player's
+                engines-only or turrets-only filter.
+                -->
+              <debug_text text="'AdvancedTargetingHotkeys: branch - surface element lost, was %s on hull %s, keeping mode %s'.[$state.$surfaceTarget, @$state.$surfaceParent.knownname, $state.$surfaceMode]"
+                chance="$debugChance" filter="general" />
               <set_value name="$state.$surfaceTarget" exact="null" />
               <do_if value="$state.$surfaceMode != null">
                 <set_value name="$state.$mode" exact="$state.$surfaceMode" />
               </do_if>
             </do_if>
             <do_else>
+              <debug_text text="'AdvancedTargetingHotkeys: branch - target cleared externally with no surface state, resetting mode'"
+                chance="$debugChance" filter="general" />
               <include_actions ref="ResetMode" />
             </do_else>
           </do_if>
           <do_elseif value="event.param.issurfaceelement">
+            <debug_text text="'AdvancedTargetingHotkeys: branch - external surface pick, entering surface mode'"
+              chance="$debugChance" filter="general" />
             <do_if value="$state.$surfaceMode == null">
               <set_value name="$state.$surfaceMode" exact="'surfaceAll'" />
             </do_if>
@@ -1172,10 +1247,209 @@
             <include_actions ref="ResolveHullOf" />
             <set_value name="$state.$surfaceParent" exact="$elementHull" />
             <set_value name="$state.$surfaceTarget" exact="event.param" />
+            <!-- Externally picked, but still a target worth following to its death. -->
+            <set_value name="$armTarget" exact="event.param" />
+            <set_value name="$armMode" exact="$state.$surfaceMode" />
+            <include_actions ref="ArmDestructionWatch" />
           </do_elseif>
           <do_else>
+            <debug_text text="'AdvancedTargetingHotkeys: branch - external object pick, resetting mode'"
+              chance="$debugChance" filter="general" />
             <include_actions ref="ResetMode" />
           </do_else>
+        </do_else>
+      </actions>
+    </cue>
+
+    <!--
+      Holder for the object the destruction watcher is currently bound to. A root cue
+      with no conditions, so its actions run once at game start; $watched is written by
+      ArmDestructionWatch from then on. It has to be a cue variable rather than part of
+      $state because event_object_destroyed resolves its object attribute when the
+      listener registers, and only a cue-scoped expression is available at that point.
+      -->
+    <cue name="Watch_Holder">
+      <actions>
+        <set_value name="$watched" exact="null" />
+      </actions>
+    </cue>
+
+    <!--
+      The current target just died. Fires for ANY killer - the player, the player's
+      fleet, a third party - because the event is bound to the object, not to who shot
+      it, which is exactly the requirement. Verified in-game 2026-07-30: it fired for a
+      player kill alongside event_player_killed_object.
+
+      The successor is chosen HERE and nowhere else, and that is the whole reason this
+      cue does real work instead of just raising a flag. At this instant the dying
+      object is still returned by finds as operational, so it still has an index in the
+      candidate list - which means the element that FOLLOWS it is knowable. A moment
+      later it is gone from every find, the index is gone with it, and "next" could only
+      ever degrade to "nearest", which is a different thing entirely unless the player
+      happened to be on the closest candidate.
+
+      The successor is stored as the object rather than as an index, so re-sorting during
+      the wait - the list is ordered by distance and the player is moving - cannot make
+      it point at something else.
+      -->
+    <cue name="Target_Destroyed" instantiate="true" namespace="this">
+      <conditions>
+        <event_object_destroyed object="Watch_Holder.$watched" />
+      </conditions>
+      <actions>
+        <include_actions ref="LoadConfig" />
+        <include_actions ref="LoadState" />
+        <include_actions ref="LoadShipContext" />
+        <include_actions ref="md.HotkeyApi.GetDebugChance" />
+        <debug_text text="'AdvancedTargetingHotkeys: tracked target %s destroyed, killer %s, mode %s - queueing shift'.[event.object, event.param, $state.$mode]"
+          chance="$debugChance" filter="general" />
+        <set_value name="$state.$shiftPending" exact="true" />
+        <set_value name="$state.$shiftTarget" exact="null" />
+
+        <set_value name="$mode" exact="$state.$mode" />
+        <set_value name="$autoShiftMode" exact="$mode" />
+        <include_actions ref="IsAutoShiftMode" />
+        <do_if value="$autoShift">
+          <include_actions ref="BuildCandidates" />
+          <set_value name="$index" exact="$candidates.indexof.{event.object}" />
+          <do_if value="$index gt 0">
+            <do_if value="$index lt $candidates.count">
+              <set_value name="$state.$shiftTarget" exact="$candidates.{$index + 1}" />
+            </do_if>
+            <do_else>
+              <!-- It was the last entry, so wrap, exactly as Next does. -->
+              <set_value name="$state.$shiftTarget" exact="$candidates.{1}" />
+            </do_else>
+            <debug_text text="'AdvancedTargetingHotkeys: dying target was index %s of %s, successor %s'.[$index, $candidates.count, @$state.$shiftTarget.knownname]"
+              chance="$debugChance" filter="general" />
+          </do_if>
+          <do_else>
+            <!-- Not in its own mode's list, so there is no position to preserve.
+                 Auto_Shift_Cue falls back to the nearest candidate. -->
+            <debug_text text="'AdvancedTargetingHotkeys: dying target not in mode %s list of %s, no successor recorded'.[$mode, $candidates.count]"
+              chance="$debugChance" filter="general" />
+          </do_else>
+        </do_if>
+
+        <signal_cue_instantly cue="Auto_Shift_Cue" />
+      </actions>
+    </cue>
+
+    <!--
+      Replaces a destroyed target with the next candidate of the same mode.
+
+      The delay is the whole point of this cue existing separately. Measured on
+      2026-07-30: the destruction event lands ~0.08s before event_player_changed_target,
+      and at that moment the dying object is still returned by finds as operational,
+      player.target still points at it, and the engine may still inject a replacement of
+      its own. Acting immediately would therefore re-pick the corpse or start a tug of
+      war over the target. Waiting a fraction of a second lets all of that settle, and
+      then a perfectly ordinary rebuild-and-pick does the right thing with no special
+      cases - the corpse is simply gone from the candidate list.
+
+      Kept off Target_Destroyed itself so that re-arming the watcher, which resets that
+      cue, can never cancel a shift already in flight.
+      -->
+    <cue name="Auto_Shift_Cue" instantiate="true" namespace="this">
+      <conditions>
+        <event_cue_signalled />
+      </conditions>
+      <delay exact="0.25s" />
+      <actions>
+        <include_actions ref="LoadConfig" />
+        <include_actions ref="LoadState" />
+        <include_actions ref="LoadShipContext" />
+        <include_actions ref="md.HotkeyApi.GetDebugChance" />
+        <!-- Released here, whatever happens below, so one death can never shift twice
+             and a mode that turns out not to want shifting cannot wedge the flag on. -->
+        <set_value name="$state.$shiftPending" exact="false" />
+        <set_value name="$queued" exact="$state.$shiftTarget" />
+        <set_value name="$state.$shiftTarget" exact="null" />
+
+        <set_value name="$mode" exact="$state.$mode" />
+        <set_value name="$autoShiftMode" exact="$mode" />
+        <include_actions ref="IsAutoShiftMode" />
+        <do_if value="$autoShift">
+          <include_actions ref="BuildCandidates" />
+          <set_value name="$thing" exact="null" />
+          <!--
+            The successor Target_Destroyed worked out while the dying target still had an
+            index. First choice, and it deliberately overrides whatever the engine may
+            have picked in the meantime: the engine's choice is arbitrary and ignores the
+            active filter, whereas this is genuinely the next entry the player would have
+            reached by pressing Next. Re-validated because the wait is long enough for it
+            to have died too - a hull under fire loses more than one element.
+            -->
+          <do_if value="$queued != null and @$queued.isoperational">
+            <set_value name="$thing" exact="$queued" />
+            <debug_text text="'AdvancedTargetingHotkeys: shifting to recorded successor %s'.[$queued.knownname]"
+              chance="$debugChance" filter="general" />
+          </do_if>
+          <!--
+            No usable successor. If the engine already left us on something this mode
+            would have offered anyway, leave it alone rather than making the HUD flicker.
+            This is also what makes a stale watcher harmless: it fires, finds the current
+            target is fine, and does nothing.
+            -->
+          <do_elseif value="@player.target != null and $candidates.indexof.{player.target} gt 0">
+            <debug_text text="'AdvancedTargetingHotkeys: shift not needed, target %s is already in mode %s'.[player.target, $mode]"
+              chance="$debugChance" filter="general" />
+            <!--
+              Still re-arm. Nothing else will: the watcher is currently bound to the
+              object that just died, so without this it would never fire again and the
+              *next* death would go unnoticed.
+              -->
+            <set_value name="$armTarget" exact="player.target" />
+            <set_value name="$armMode" exact="$mode" />
+            <include_actions ref="ArmDestructionWatch" />
+            <do_if value="player.target.issurfaceelement">
+              <set_value name="$state.$surfaceTarget" exact="player.target" />
+            </do_if>
+          </do_elseif>
+          <do_elseif value="$candidates.count gt 0">
+            <!-- Last resort only: with no successor recorded and nothing valid held,
+                 there is no position left to preserve, so take the nearest. -->
+            <set_value name="$thing" exact="$candidates.{1}" />
+          </do_elseif>
+          <do_elseif value="$state.$surfaceParent != null">
+            <!--
+              Last step of the surface chain. BuildCandidates has already widened a
+              filtered mode to every remaining element on the hull, so an empty group
+              here means the hull has been stripped bare - fall back to the hull itself
+              rather than dropping the player's target entirely.
+              -->
+            <do_if value="@$state.$surfaceParent.isknown and @$state.$surfaceParent.isradarvisible">
+              <set_value name="$thing" exact="$state.$surfaceParent" />
+              <debug_text text="'AdvancedTargetingHotkeys: hull %s has no elements left, falling back to the hull itself'.[$state.$surfaceParent.knownname]"
+                chance="$debugChance" filter="general" />
+            </do_if>
+          </do_elseif>
+
+          <do_if value="$thing != null">
+            <debug_text text="'AdvancedTargetingHotkeys: shifting to %s, mode %s, %s candidates'.[$thing.knownname, $mode, $candidates.count]"
+              chance="$debugChance" filter="general" />
+            <include_actions ref="ApplyTarget" />
+            <!-- BuildCandidates may have downgraded a filtered surface mode. -->
+            <set_value name="$state.$mode" exact="$mode" />
+            <include_actions ref="IsSurfaceMode" />
+            <do_if value="$isSurfaceMode">
+              <set_value name="$state.$surfaceMode" exact="$mode" />
+            </do_if>
+          </do_if>
+          <do_else>
+            <!--
+              Nothing left to shift to. Silent on purpose: no fail sound and no ticker.
+              This is a passive reaction to something dying, not a key press, and
+              announcing "no matching target found" after the last kill of every fight
+              would be noise. The keypress path still reports failure as it always did.
+              -->
+            <debug_text text="'AdvancedTargetingHotkeys: nothing left to shift to for mode %s, leaving target alone'.[$mode]"
+              chance="$debugChance" filter="general" />
+          </do_else>
+        </do_if>
+        <do_else>
+          <debug_text text="'AdvancedTargetingHotkeys: shift skipped, mode %s does not auto-shift'.[$mode]"
+            chance="$debugChance" filter="general" />
         </do_else>
       </actions>
     </cue>
