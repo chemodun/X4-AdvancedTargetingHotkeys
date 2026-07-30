@@ -32,9 +32,14 @@
       <t id="1018">Aggancia lungo la linea di vista</t>
       <!-- acquisition - mission -->
       <t id="1019">Aggancia l'obiettivo di missione attivo</t>
+      <!-- utility - type filter -->
+      <t id="1020">Restringi il filtro al tipo selezionato</t>
       <!-- status messages -->
       <t id="2001">%s: nessun bersaglio corrispondente</t>
       <t id="2002">Nessun bersaglio corrispondente</t>
+      <t id="2003">Filtro ristretto a %s</t>
+      <t id="2004">%s: nessun oggetto di tipo %s trovato</t>
+      <t id="2005">Seleziona prima un bersaglio con un tasto filtrato</t>
       <!-- settings page - hotkey groups -->
       <t id="90100">Gruppi di scorciatoie</t>
       <t id="90101">Bersagli di combattimento</t>
@@ -53,6 +58,7 @@
       <t id="90140">Riscontro</t>
       <t id="90141">Riproduci un suono</t>
       <t id="90142">Mostra un messaggio se non si trova nulla</t>
+      <t id="90143">Mostra un messaggio quando il filtro viene ristretto</t>
     </page>
   </add>
 </diff>

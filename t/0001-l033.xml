@@ -32,9 +32,14 @@
       <t id="1018">Cibler dans la ligne de mire</t>
       <!-- acquisition - mission -->
       <t id="1019">Cibler l'objectif de mission actif</t>
+      <!-- utility - type filter -->
+      <t id="1020">Restreindre le filtre au type sélectionné</t>
       <!-- status messages -->
       <t id="2001">%s : aucune cible correspondante</t>
       <t id="2002">Aucune cible correspondante</t>
+      <t id="2003">Filtre restreint à %s</t>
+      <t id="2004">%s : aucun objet de type %s</t>
+      <t id="2005">Sélectionnez d'abord une cible avec un raccourci filtré</t>
       <!-- settings page - hotkey groups -->
       <t id="90100">Groupes de raccourcis</t>
       <t id="90101">Cibles de combat</t>
@@ -53,6 +58,7 @@
       <t id="90140">Retour</t>
       <t id="90141">Jouer un son</t>
       <t id="90142">Afficher un message si rien n'est trouvé</t>
+      <t id="90143">Afficher un message lors de la restriction du filtre</t>
     </page>
   </add>
 </diff>

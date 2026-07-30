@@ -32,9 +32,14 @@
       <t id="1018">Zaměřit v přímé linii pohledu</t>
       <!-- acquisition - mission -->
       <t id="1019">Zaměřit aktivní misijní objekt</t>
+      <!-- utility - type filter -->
+      <t id="1020">Omezit filtr na vybraný typ</t>
       <!-- status messages -->
       <t id="2001">%s: nenalezen žádný odpovídající cíl</t>
       <t id="2002">Nenalezen žádný odpovídající cíl</t>
+      <t id="2003">Filtr omezen na %s</t>
+      <t id="2004">%s: nic typu %s nenalezeno</t>
+      <t id="2005">Nejprve vyberte cíl filtrovanou klávesou</t>
       <!-- settings page - hotkey groups -->
       <t id="90100">Skupiny zkratek</t>
       <t id="90101">Bojové cíle</t>
@@ -53,6 +58,7 @@
       <t id="90140">Zpětná vazba</t>
       <t id="90141">Přehrát zvuk</t>
       <t id="90142">Zobrazit zprávu, když se nic nenajde</t>
+      <t id="90143">Zobrazit zprávu při omezení filtru</t>
     </page>
   </add>
 </diff>

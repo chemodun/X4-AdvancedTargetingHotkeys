@@ -1,6 +1,6 @@
 # Advanced Targeting Hotkeys
 
-Filtered target acquisition for X4: Foundations, bindable through the native game keybinding UI. Pick the nearest enemy, incoming missile, own ship, station, gate, collectable, asteroid or surface element, then cycle **only within that category** instead of through everything in the sector.
+Filtered target acquisition for X4: Foundations, bindable through the native game keybinding UI. Pick the nearest enemy, incoming missile, own ship, station, gate, collectable, asteroid or surface element, then cycle **only within that category** instead of through everything in the sector - and narrow it to **one exact type** when that is what you are after.
 
 Built on the [Native Hotkey API](https://www.nexusmods.com/x4foundations/mods/2181). No external process, no pipe server.
 
@@ -12,6 +12,8 @@ This mod adds a **sticky filter**. Every acquisition hotkey does two things: it 
 
 The filter is dropped again the moment you change target by any other means: a mouse click, one of the vanilla targeting keys, or the target leaving the sector. Next/Previous then go back to cycling everything, exactly as they do in vanilla. Nothing gets stuck.
 
+On top of that you can **narrow the filter to one exact type**. With a target selected by any of these hotkeys, "Narrow Filter to Selected Type" pins the filter to that object's type, and from then on Next/Previous - and the automatic hand-over when a target dies - only consider objects of that same type. Target one M Beam Turret Mk1 on a destroyer and work through every other M Beam Turret Mk1 on it while ignoring the shields, the engines and the smaller guns. Pick out one Nemesis Vanguard in a mixed enemy wing and cycle only the Nemesis Vanguards. The next acquisition hotkey you press drops the narrowing along with everything else.
+
 ### When your target goes away
 
 Losing a target is the one case where the filter is *not* dropped. In the categories where you are working through a list of things - enemies of any size, incoming missiles, collectables, and all four surface-element filters - the mod picks up where you left off instead:
@@ -20,8 +22,7 @@ Losing a target is the one case where the filter is *not* dropped. In the catego
 - **Collectables count as lost when they are collected**, not only when they are shot, so chain-collecting drops works the same way.
 - **A ship that stops being an enemy counts as lost too.** Shoot a fighter until its pilot bails out and the derelict is no longer hostile, so you move on to the next actual threat instead of staying locked onto an empty hull. The same applies to any ownership change. If the new owner is still hostile, nothing happens - your target was and remains valid.
 - **Surface elements you can actually shoot come first.** Destroy a turret and the handover walks on from where you were and takes the first element you have a clear line of sight to, skipping the ones hidden behind the hull that you would have to fly around first. The check is the game's own ray cast, resolved the same way weapon aiming is, so "visible" means what it means when you pull the trigger. If every remaining element is blocked, you simply get the next one in order, so this never costs you a target. Turn it off in the settings if you would rather always have the strict next one.
-- **Running out of one type** of surface element (say, the last engine) widens the filter to the remaining surface elements of that same hull rather than dumping you back out to free targeting.
-- **A hull stripped bare** hands you the hull itself.
+- **Running out of one type** of surface element - the last engine, the last turret, or the last one of a type you narrowed the filter to - hands you **the hull itself**, never a different kind of element. Finishing off a ship's engines does not silently move you onto its shields. Any type narrowing is dropped at the same moment, since the hull is not of that type and there is nothing of it left to walk. The same happens if you press Next or Previous when there is nothing of that kind left: you land on the hull rather than on a message.
 - When the category is genuinely empty, **nothing happens at all** - no sound, no message, and your target is left alone. This is a reaction to something dying, not to a key press, so it stays quiet.
 
 Navigation categories - your own ships, stations, gates, asteroids, mission targets - deliberately do *not* do this. Having a station silently swapped for another one because the first blew up would be surprising rather than helpful.
@@ -34,7 +35,7 @@ Navigation categories - your own ships, stations, gates, asteroids, mission targ
 
 ## Hotkeys
 
-All 19 actions are **pilot-area**: they fire while you are at the controls of a ship with no menu open. None of them come bound to a key. Assign the ones you want under **Options > Hotkey Management > Hotkey Bindings**.
+All 20 actions are **pilot-area**: they fire while you are at the controls of a ship with no menu open. None of them come bound to a key. Assign the ones you want under **Options > Hotkey Management > Hotkey Bindings**.
 
 ### Acquisition
 
@@ -68,6 +69,9 @@ These four are named after what they actually do: they work on the object **you 
 | Select Previous Target \(Filtered\) | Previous object. With no target selected, starts from the farthest one |
 | Deselect Target and Reset Filter | Clears the target **and** the filter |
 | Target Along Line of Sight | Picks whatever you are looking at |
+| Narrow Filter to Selected Type | Pins the active filter to the type of the object you have selected |
+
+**Narrow Filter to Selected Type** needs a target that one of this mod's hotkeys put there: it reads the type off that target and adds it to the active filter, so Next/Previous and the automatic hand-over on a kill stay on that one type. It is a set-only key, not a toggle - press it a second time and nothing changes, because everything you can cycle to is already of that type. The narrowing goes away exactly when the filter itself does: any acquisition hotkey, the line-of-sight pick, "Deselect Target and Reset Filter", or any target change made outside this mod. With no filter active, or with nothing selected, the key does nothing and says so.
 
 **Target Along Line of Sight** starts from a one-degree cone dead ahead and widens in steps to 25 degrees, stopping as soon as it finds something. Whatever is actually under your crosshair therefore always wins over something merely in front of the ship. Surface elements are searched at each step too, with a range limit that tightens as the cone widens, so a wide-angle sweep cannot snap you onto a random turret on a distant station.
 
@@ -77,7 +81,7 @@ Range rules follow the radar: ordinary objects have to be inside your ship's rad
 
 A hotkey never substitutes a different kind of object for the one you asked for. Press "Target Nearest Station" with no station in range and your current target is left exactly as it was, with a fail sound and a message naming the category that came up empty. The same applies to Next/Previous: if the active filter has nothing left in it, they do nothing rather than silently dropping you back into cycling everything.
 
-The one exception is deliberate and stays inside the category you asked for: if the hull you are attacking has no engines left, "Next" in engine mode widens to that hull's remaining surface elements rather than stranding you.
+The one exception is the surface-element filters, and it stays on the object you were working on: when a hull has none of the requested kind of element left, you get **that hull** - by key press, or automatically when your last target of that kind is destroyed. Never a different kind of element, never a different hull. Any type narrowing is cleared at the same moment.
 
 ## Relationship to the vanilla targeting hotkeys
 
@@ -115,7 +119,8 @@ Everything is configurable in game under **Options > Hotkey Management > Advance
 | | Own ships checked for a free dock | `12` | Caps the docking-bay scan behind "Target Nearest Own Ship for Landing" |
 | | Prefer visible surface elements when a target is lost | on | When a surface element is destroyed, hand over to one you have line of sight to rather than one hidden behind the hull |
 | Feedback | Play a sound | on | Confirmation blip on success, fail blip when nothing matched |
-| | Show a message when nothing is found | on | Names the category that came up empty |
+| | Show a message when nothing is found | on | Names the category that came up empty, and the type when the filter is narrowed to one |
+| | Show a message when the filter is narrowed | on | Names the type the filter was just pinned to |
 
 Turning a whole group off means those hotkeys are never registered, so they do not occupy one of the Native Hotkey API's 48 shared slots. Turning a group **on** takes effect immediately; turning one **off** only releases its slots on the next reload, because the Hotkey API's registry has no unregister path. To free a single hotkey's slot right away, disable it on the API's own **Hotkey Requests** page instead.
 
@@ -137,7 +142,7 @@ One setting is deliberately left out of the UI, since it exists for troubleshoot
 
 - The hotkeys only fire while you are piloting a ship with no menu open. There are no map-mode or on-foot variants.
 - Candidate lists are rebuilt on every key press, so they always reflect the current situation. On a very large station with hundreds of surface elements this is measurable work per press.
-- The Native Hotkey API's 48-slot pool is shared with every other mod using it. This mod asks for 19 of them with everything enabled.
+- The Native Hotkey API's 48-slot pool is shared with every other mod using it. This mod asks for 20 of them with everything enabled.
 - Key bindings in X4 are stored per profile, not in the save, so bindings created in one game carry over to any other save using the same profile.
 
 ## Credits
@@ -156,7 +161,8 @@ One setting is deliberately left out of the UI, since it exists for troubleshoot
 ### [1.00] - 2026-07-29
 
 - **Added**
-  - Initial version: 19 pilot-area targeting hotkeys, sticky category filter with automatic invalidation, type-filtered surface-element targeting with widening fallback, widening-cone line-of-sight pick, and configurable hotkey groups.
+  - Initial version: 20 pilot-area targeting hotkeys, sticky category filter with automatic invalidation, type-filtered surface-element targeting with widening fallback, widening-cone line-of-sight pick, and configurable hotkey groups.
+  - "Narrow Filter to Selected Type" pins the active filter to the exact type of the selected object, so Next/Previous and the automatic hand-over on a kill stay on that one ship, turret or engine type until the next acquisition.
   - A hotkey that finds nothing leaves the current target untouched and reports which category came up empty, rather than substituting a different kind of object.
   - Settings for hotkey groups, targeting behaviour and feedback, on their own page under the Native Hotkey API's **Hotkey Management** options page and stored per profile alongside the key bindings.
   - Debug logging follows the Native Hotkey API's own Debug Logging switch, so one setting covers the API and every mod built on it.

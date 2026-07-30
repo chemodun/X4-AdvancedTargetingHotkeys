@@ -27,6 +27,7 @@
             $rangeMultiplier        = 2,
             $soundEnabled           = true,
             $notifyOnFailure        = true,
+            $notifyOnTypeFilter     = true,
             $stickyModeEnabled      = true,
             $preferVisibleOnLoss    = true,
             $dockableScanLimit      = 12,
@@ -62,6 +63,9 @@
         <do_if value="not $config.$notifyOnFailure?">
           <set_value name="$config.$notifyOnFailure" exact="true" />
         </do_if>
+        <do_if value="not $config.$notifyOnTypeFilter?">
+          <set_value name="$config.$notifyOnTypeFilter" exact="true" />
+        </do_if>
         <do_if value="not $config.$stickyModeEnabled?">
           <set_value name="$config.$stickyModeEnabled" exact="true" />
         </do_if>
@@ -84,6 +88,7 @@
         <do_if value="@player.entity.$AdvancedTargetingHotkeysState == null">
           <set_value name="player.entity.$AdvancedTargetingHotkeysState" exact="table[
             $mode          = null,
+            $macroFilter   = null,
             $surfaceMode   = null,
             $surfaceParent = null,
             $surfaceTarget = null,
@@ -102,6 +107,7 @@
     <library name="ResetMode" purpose="include_actions">
       <actions>
         <set_value name="$state.$mode" exact="null" />
+        <set_value name="$state.$macroFilter" exact="null" />
         <set_value name="$state.$surfaceMode" exact="null" />
         <set_value name="$state.$surfaceParent" exact="null" />
         <set_value name="$state.$surfaceTarget" exact="null" />
@@ -259,6 +265,21 @@
       </actions>
     </library>
 
+    <!-- $filterMacro -> $macroName, for player-facing text. The macro's ware carries the name
+         the player knows it by; hulls and gates have no ware, and .id is the last resort so a
+         message is never blank. -->
+    <library name="ResolveMacroName" purpose="include_actions">
+      <actions>
+        <set_value name="$macroName" exact="@$filterMacro.ware.name" />
+        <do_if value="$macroName == null or $macroName == ''">
+          <set_value name="$macroName" exact="@$filterMacro.name" />
+        </do_if>
+        <do_if value="$macroName == null or $macroName == ''">
+          <set_value name="$macroName" exact="@$filterMacro.id" />
+        </do_if>
+      </actions>
+    </library>
+
     <!-- $element -> $elementHull. Not .parent: on a station that is the MODULE, which is not
          radar-visible, so surface cycling died on stations while ships worked. .defensible is
          what vanilla uses on surface elements. -->
@@ -322,15 +343,20 @@
 
     <!-- $mode -> distance-sorted $candidates. Needs $config/$state/$ownShip/$radar/$farRadar.
          
-         The one fallback stays inside the category: a filtered surface mode with nothing left
-         widens to the same hull's remaining elements. Any other empty filter stays empty, and
-         the caller reports failure rather than handing over a different kind of object. -->
+         An empty filter stays empty. Nothing here ever substitutes a different kind of object,
+         a wider class or another hull - the caller reports failure instead. -->
     <library name="BuildCandidates" purpose="include_actions">
       <actions>
         <create_group groupname="$candidates" />
 
+        <!-- Type pin, handed to every find below as its macro filter. Null means unfiltered. -->
+        <set_value name="$macroFilter" exact="null" />
+        <do_if value="$config.$stickyModeEnabled">
+          <set_value name="$macroFilter" exact="$state.$macroFilter" />
+        </do_if>
+
         <do_if value="$mode == 'enemyAll'">
-          <find_object name="$found" class="[class.ship, class.controllable, class.explosive, class.mine, class.missile]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
+          <find_object name="$found" macro="$macroFilter" class="[class.ship, class.controllable, class.explosive, class.mine, class.missile]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
             <match owner="faction.player" negate="true" />
           </find_object>
           <do_all counter="$i" exact="$found.count">
@@ -344,7 +370,7 @@
         </do_if>
 
         <do_elseif value="$mode == 'enemySmall'">
-          <find_ship name="$found" class="[class.ship_xs, class.ship_s, class.ship_m]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
+          <find_ship name="$found" macro="$macroFilter" class="[class.ship_xs, class.ship_s, class.ship_m]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
             <match owner="faction.player" negate="true" />
           </find_ship>
           <do_all counter="$i" exact="$found.count">
@@ -358,7 +384,7 @@
         </do_elseif>
 
         <do_elseif value="$mode == 'enemyLarge'">
-          <find_ship name="$found" class="[class.ship_l, class.ship_xl]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
+          <find_ship name="$found" macro="$macroFilter" class="[class.ship_l, class.ship_xl]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
             <match owner="faction.player" negate="true" />
           </find_ship>
           <do_all counter="$i" exact="$found.count">
@@ -371,7 +397,7 @@
 
         <!-- Incoming only. -->
         <do_elseif value="$mode == 'missiles'">
-          <find_object name="$found" class="[class.missile]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
+          <find_object name="$found" macro="$macroFilter" class="[class.missile]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
             <match owner="faction.player" negate="true" />
             <match_attention min="attention.visible" />
           </find_object>
@@ -384,7 +410,7 @@
         </do_elseif>
 
         <do_elseif value="$mode == 'ownAll'">
-          <find_ship_by_true_owner name="$found" faction="faction.player" class="[class.ship_s, class.ship_m, class.ship_l, class.ship_xl]" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
+          <find_ship_by_true_owner name="$found" macro="$macroFilter" faction="faction.player" class="[class.ship_s, class.ship_m, class.ship_l, class.ship_xl]" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
           <do_all counter="$i" exact="$found.count">
             <do_if value="$found.{$i} != $ownShip">
               <add_to_group groupname="$candidates" object="$found.{$i}" />
@@ -395,7 +421,7 @@
         <!-- One find_dockingbay per ship is not cheap and this runs on every cycle press, so only
              the $dockableScanLimit nearest are examined. -->
         <do_elseif value="$mode == 'ownDockable'">
-          <find_ship_by_true_owner name="$found" faction="faction.player" class="[class.ship_s, class.ship_m, class.ship_l, class.ship_xl]" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
+          <find_ship_by_true_owner name="$found" macro="$macroFilter" faction="faction.player" class="[class.ship_s, class.ship_m, class.ship_l, class.ship_xl]" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
           <set_value name="$examined" exact="0" />
           <do_all counter="$i" exact="$found.count">
             <do_if value="$examined ge $config.$dockableScanLimit">
@@ -414,7 +440,7 @@
         </do_elseif>
 
         <do_elseif value="$mode == 'stations'">
-          <find_station name="$found" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
+          <find_station name="$found" macro="$macroFilter" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
           <do_all counter="$i" exact="$found.count">
             <do_if value="$found.{$i}.isknown">
               <add_to_group groupname="$candidates" object="$found.{$i}" />
@@ -423,7 +449,7 @@
         </do_elseif>
 
         <do_elseif value="$mode == 'gates'">
-          <find_object name="$found" class="[class.highwayentrygate, class.gate]" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
+          <find_object name="$found" macro="$macroFilter" class="[class.highwayentrygate, class.gate]" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
           <do_all counter="$i" exact="$found.count">
             <do_if value="$found.{$i}.isknown">
               <add_to_group groupname="$candidates" object="$found.{$i}" />
@@ -432,7 +458,7 @@
         </do_elseif>
 
         <do_elseif value="$mode == 'collectables'">
-          <find_object name="$found" class="[class.collectablewares, class.lockbox]" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
+          <find_object name="$found" macro="$macroFilter" class="[class.collectablewares, class.lockbox]" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
           <do_all counter="$i" exact="$found.count">
             <do_if value="$found.{$i}.isknown">
               <add_to_group groupname="$candidates" object="$found.{$i}" />
@@ -441,7 +467,7 @@
         </do_elseif>
 
         <do_elseif value="$mode == 'asteroids'">
-          <find_object name="$found" class="[class.asteroid]" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
+          <find_object name="$found" macro="$macroFilter" class="[class.asteroid]" space="player.sector" multiple="true" sortbydistanceto="player.entity" />
           <do_all counter="$i" exact="$found.count">
             <do_if value="$found.{$i}.isknown">
               <add_to_group groupname="$candidates" object="$found.{$i}" />
@@ -453,7 +479,7 @@
           <include_actions ref="ResolveSurfaceParent" />
           <do_if value="$parent != null">
             <do_if value="$mode == 'surfaceAll'">
-              <find_object_component groupname="$found" object="$parent" surfaceelement="true" checkoperational="true" indestructible="false" invulnerable="false" integrated="false" multiple="true" sortbydistanceto="player.entity" />
+              <find_object_component groupname="$found" object="$parent" macro="$macroFilter" surfaceelement="true" checkoperational="true" indestructible="false" invulnerable="false" integrated="false" multiple="true" sortbydistanceto="player.entity" />
             </do_if>
             <do_else>
               <do_if value="$mode == 'surfaceEngines'">
@@ -465,7 +491,7 @@
               <do_else>
                 <set_value name="$surfaceClasses" exact="[class.shieldgenerator]" />
               </do_else>
-              <find_object_component groupname="$found" object="$parent" class="$surfaceClasses" surfaceelement="true" checkoperational="true" indestructible="false" invulnerable="false" integrated="false" multiple="true" sortbydistanceto="player.entity" />
+              <find_object_component groupname="$found" object="$parent" macro="$macroFilter" class="$surfaceClasses" surfaceelement="true" checkoperational="true" indestructible="false" invulnerable="false" integrated="false" multiple="true" sortbydistanceto="player.entity" />
             </do_else>
             <do_all counter="$i" exact="$found.count">
               <do_if value="$found.{$i}.issurfaceelement and $found.{$i}.isoperational">
@@ -476,17 +502,14 @@
             <debug_text text="'AdvancedTargetingHotkeys: surface parent %s yielded %s candidates for mode %s'.[$parent.debugname, $candidates.count, $mode]"
               chance="$debugChance" filter="general" />
 
-            <!-- Nothing of the requested type left on this hull: widen to every surface element it still has. -->
-            <do_if value="$candidates.count == 0 and $mode != 'surfaceAll'">
-              <set_value name="$mode" exact="'surfaceAll'" />
-              <set_value name="$state.$mode" exact="'surfaceAll'" />
-              <set_value name="$state.$surfaceMode" exact="'surfaceAll'" />
-              <find_object_component groupname="$found" object="$parent" surfaceelement="true" checkoperational="true" indestructible="false" invulnerable="false" integrated="false" multiple="true" sortbydistanceto="player.entity" />
-              <do_all counter="$i" exact="$found.count">
-                <do_if value="$found.{$i}.issurfaceelement and $found.{$i}.isoperational">
-                  <add_to_group groupname="$candidates" object="$found.{$i}" />
-                </do_if>
-              </do_all>
+            <!-- Nothing of this kind left on the hull: the hull itself is the candidate, never a
+                 different kind of element. The type pin goes with it, since the hull is not of that
+                 type and nothing of that type remains to walk. -->
+            <do_if value="$candidates.count == 0">
+              <add_to_group groupname="$candidates" object="$parent" />
+              <set_value name="$state.$macroFilter" exact="null" />
+              <debug_text text="'AdvancedTargetingHotkeys: hull %s has no %s left, offering the hull itself'.[$parent.debugname, $mode]"
+                chance="$debugChance" filter="general" />
             </do_if>
           </do_if>
           <do_else>
@@ -498,7 +521,7 @@
 
         <!-- Free mode's own list, not a fallback for anyone else's empty filter. -->
         <do_else>
-          <find_object name="$found" class="[class.ship, class.station, class.highwayentrygate, class.gate, class.collectablewares, class.asteroid, class.missile, class.mine, class.explosive, class.lockbox, class.navbeacon, class.resourceprobe, class.satellite]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
+          <find_object name="$found" macro="$macroFilter" class="[class.ship, class.station, class.highwayentrygate, class.gate, class.collectablewares, class.asteroid, class.missile, class.mine, class.explosive, class.lockbox, class.navbeacon, class.resourceprobe, class.satellite]" space="player.sector" multiple="true" sortbydistanceto="player.entity">
             <match_attention min="attention.visible" />
           </find_object>
           <do_all counter="$i" exact="$found.count">
@@ -560,9 +583,14 @@
           </do_if>
           <do_if value="$config.$notifyOnFailure">
             <include_actions ref="ResolveModeName" />
-            <do_if value="$nameId != 0">
-              <show_notification text="{1972092437, 2001}.[{1972092437, $nameId}]" />
+            <do_if value="$config.$stickyModeEnabled and $state.$macroFilter != null and $nameId != 0">
+              <set_value name="$filterMacro" exact="$state.$macroFilter" />
+              <include_actions ref="ResolveMacroName" />
+              <show_notification text="{1972092437, 2004}.[{1972092437, $nameId}, $macroName]" />
             </do_if>
+            <do_elseif value="$nameId != 0">
+              <show_notification text="{1972092437, 2001}.[{1972092437, $nameId}]" />
+            </do_elseif>
             <do_else>
               <show_notification text="{1972092437, 2002}" />
             </do_else>
@@ -642,6 +670,16 @@
             $name             = {1972092437, 1018},
             $version          = 1,
             $actionCue        = Line_Of_Sight_Cue,
+          ]" />
+        <signal_cue_instantly
+          cue="md.HotkeyApi.Register_Action"
+          param="table[
+            $id               = 'ath_filter_type',
+            $area             = 'pilot',
+            $isObjectRequired = false,
+            $name             = {1972092437, 1020},
+            $version          = 1,
+            $actionCue        = Filter_Type_Cue,
           ]" />
 
         <do_if value="$config.$groupCombatEnabled">
@@ -830,6 +868,8 @@
         <include_actions ref="md.HotkeyApi.GetDebugChance" />
         <set_value name="$id" exact="event.param.$id" />
         <include_actions ref="ResolveMode" />
+        <!-- Acquiring re-establishes the category from scratch, so any type pin goes with it. -->
+        <set_value name="$state.$macroFilter" exact="null" />
         <set_value name="$thing" exact="null" />
         <debug_text text="'AdvancedTargetingHotkeys: acquire id %s, mode %s'.[$id, $mode]" chance="$debugChance" filter="general" />
 
@@ -848,7 +888,6 @@
           </do_if>
           <include_actions ref="ApplyTarget" />
           <do_if value="$thing != null">
-            <!-- BuildCandidates may have downgraded $mode, so read it back instead of reusing the id. -->
             <set_value name="$state.$mode" exact="$mode" />
             <include_actions ref="IsSurfaceMode" />
             <do_if value="$isSurfaceMode">
@@ -937,6 +976,45 @@
       </actions>
     </cue>
 
+    <!-- Pins the active filter to the selected object's macro. Next/Previous and the automatic
+         hand-over then stay on that one type until an acquisition or any external target change
+         clears it. Sets only - pressing it again on the same selection changes nothing. -->
+    <cue name="Filter_Type_Cue" instantiate="true" namespace="this">
+      <conditions>
+        <event_cue_signalled />
+      </conditions>
+      <actions>
+        <include_actions ref="LoadConfig" />
+        <include_actions ref="LoadState" />
+        <include_actions ref="md.HotkeyApi.GetDebugChance" />
+        <set_value name="$mode" exact="$state.$mode" />
+        <set_value name="$filterMacro" exact="@player.target.macro" />
+
+        <do_if value="$config.$stickyModeEnabled and $mode != null and $filterMacro != null">
+          <set_value name="$state.$macroFilter" exact="$filterMacro" />
+          <include_actions ref="ResolveMacroName" />
+          <debug_text text="'AdvancedTargetingHotkeys: type filter pinned to %s from %s, mode %s'.[$macroName, player.target.debugname, $mode]"
+            chance="$debugChance" filter="general" />
+          <do_if value="$config.$soundEnabled">
+            <play_sound sound="'ui_target_set'" type="ui" />
+          </do_if>
+          <do_if value="$config.$notifyOnTypeFilter">
+            <show_notification text="{1972092437, 2003}.[$macroName]" />
+          </do_if>
+        </do_if>
+        <do_else>
+          <debug_text text="'AdvancedTargetingHotkeys: type filter needs a selection made by a filtered hotkey - mode %s, target %s'.[$mode, @player.target.debugname]"
+            chance="$debugChance" filter="general" />
+          <do_if value="$config.$soundEnabled">
+            <play_sound sound="'ui_target_set_fail'" type="ui" />
+          </do_if>
+          <do_if value="$config.$notifyOnFailure">
+            <show_notification text="{1972092437, 2005}" />
+          </do_if>
+        </do_else>
+      </actions>
+    </cue>
+
     <!-- Widening-cone pick. Surface elements get their own sweep per step, capped shorter as
          the cone widens, or a wide cone would pick a distant station's turret over the ship
          ahead. A 0m range means no surface sweep at that angle. -->
@@ -952,6 +1030,7 @@
         <include_actions ref="md.HotkeyApi.GetDebugChance" />
         <!-- Not a filtered mode, but ApplyTarget reads $mode when reporting failure. -->
         <set_value name="$mode" exact="null" />
+        <set_value name="$state.$macroFilter" exact="null" />
         <set_value name="$angles" exact="[1deg, 3deg, 5deg, 10deg, 25deg]" />
         <set_value name="$surfaceRanges" exact="[8km, 4km, 2km, 0m, 1km]" />
         <set_value name="$thing" exact="null" />
@@ -1255,11 +1334,16 @@
               </do_if>
             </do_if>
 
-            <do_if value="$thing == null and $state.$surfaceParent != null">
-              <!-- Hull stripped bare: fall back to the hull itself rather than dropping the target. -->
+            <!-- BuildCandidates' own hull fallback cannot cover this one: the dying element still
+                 counts as operational, so it comes back as the only candidate and is dropped just
+                 above. $isSurfaceMode keeps a hull remembered from an earlier surface session out of
+                 the enemy and collectable modes, which give up silently instead. -->
+            <include_actions ref="IsSurfaceMode" />
+            <do_if value="$thing == null and $isSurfaceMode and $state.$surfaceParent != null">
               <do_if value="@$state.$surfaceParent.isknown and @$state.$surfaceParent.isradarvisible">
                 <set_value name="$thing" exact="$state.$surfaceParent" />
-                <debug_text text="'AdvancedTargetingHotkeys: hull %s has no elements left, falling back to the hull itself'.[$state.$surfaceParent.debugname]"
+                <set_value name="$state.$macroFilter" exact="null" />
+                <debug_text text="'AdvancedTargetingHotkeys: no %s left on hull %s, falling back to the hull itself'.[$mode, $state.$surfaceParent.debugname]"
                   chance="$debugChance" filter="general" />
               </do_if>
             </do_if>
@@ -1269,7 +1353,6 @@
               <debug_text text="'AdvancedTargetingHotkeys: shifting to %s, mode %s, %s candidates'.[$thing.debugname, $mode, $candidates.count]"
                 chance="$debugChance" filter="general" />
               <include_actions ref="ApplyTarget" />
-              <!-- BuildCandidates may have downgraded a filtered surface mode. -->
               <set_value name="$state.$mode" exact="$mode" />
               <include_actions ref="IsSurfaceMode" />
               <do_if value="$isSurfaceMode">
@@ -1281,8 +1364,6 @@
               <set_value name="$state.$shiftTarget" exact="$thing" />
               <set_value name="$state.$shiftPending" exact="true" />
               <set_value name="$state.$shiftAt" exact="player.age" />
-              <!-- BuildCandidates may have downgraded the mode, and the pending branch applies only the
-                   object. -->
               <set_value name="$state.$mode" exact="$mode" />
               <include_actions ref="IsSurfaceMode" />
               <do_if value="$isSurfaceMode">

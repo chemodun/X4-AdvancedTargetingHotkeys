@@ -32,9 +32,14 @@
       <t id="1018">Fijar objetivo en la línea de visión</t>
       <!-- acquisition - mission -->
       <t id="1019">Fijar objeto de misión activo</t>
+      <!-- utility - type filter -->
+      <t id="1020">Restringir el filtro al tipo seleccionado</t>
       <!-- status messages -->
       <t id="2001">%s: no se encontró ningún objetivo</t>
       <t id="2002">No se encontró ningún objetivo</t>
+      <t id="2003">Filtro restringido a %s</t>
+      <t id="2004">%s: no se encontró nada del tipo %s</t>
+      <t id="2005">Selecciona primero un objetivo con una tecla filtrada</t>
       <!-- settings page - hotkey groups -->
       <t id="90100">Grupos de teclas</t>
       <t id="90101">Objetivos de combate</t>
@@ -53,6 +58,7 @@
       <t id="90140">Respuesta</t>
       <t id="90141">Reproducir un sonido</t>
       <t id="90142">Mostrar un mensaje si no se encuentra nada</t>
+      <t id="90143">Mostrar un mensaje al restringir el filtro</t>
     </page>
   </add>
 </diff>

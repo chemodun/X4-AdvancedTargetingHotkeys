@@ -32,9 +32,14 @@
       <t id="1018">Ziel in Sichtlinie erfassen</t>
       <!-- acquisition - mission -->
       <t id="1019">Aktives Missionsobjekt erfassen</t>
+      <!-- utility - type filter -->
+      <t id="1020">Filter auf gewählten Typ einschränken</t>
       <!-- status messages -->
       <t id="2001">%s: kein passendes Ziel gefunden</t>
       <t id="2002">Kein passendes Ziel gefunden</t>
+      <t id="2003">Filter eingeschränkt auf %s</t>
+      <t id="2004">%s: nichts vom Typ %s gefunden</t>
+      <t id="2005">Zuerst ein Ziel mit einem gefilterten Hotkey wählen</t>
       <!-- settings page - hotkey groups -->
       <t id="90100">Hotkey-Gruppen</t>
       <t id="90101">Kampfziele</t>
@@ -53,6 +58,7 @@
       <t id="90140">Rückmeldung</t>
       <t id="90141">Ton abspielen</t>
       <t id="90142">Meldung anzeigen, wenn nichts gefunden wird</t>
+      <t id="90143">Meldung anzeigen, wenn der Filter eingeschränkt wird</t>
     </page>
   </add>
 </diff>

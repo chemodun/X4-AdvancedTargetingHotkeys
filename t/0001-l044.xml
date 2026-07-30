@@ -32,9 +32,14 @@
       <t id="1018">Target Along Line of Sight</t>
       <!-- acquisition - mission -->
       <t id="1019">Target Active Mission Object</t>
+      <!-- utility - type filter -->
+      <t id="1020">Narrow Filter to Selected Type</t>
       <!-- status messages -->
       <t id="2001">%s: no matching target found</t>
       <t id="2002">No matching target found</t>
+      <t id="2003">Filter narrowed to %s</t>
+      <t id="2004">%s: nothing of type %s found</t>
+      <t id="2005">Select a target with a filtered hotkey first</t>
       <!-- settings page - hotkey groups -->
       <t id="90100">Hotkey Groups</t>
       <t id="90101">Combat Targets</t>
@@ -53,6 +58,7 @@
       <t id="90140">Feedback</t>
       <t id="90141">Play a sound</t>
       <t id="90142">Show a message when nothing is found</t>
+      <t id="90143">Show a message when the filter is narrowed</t>
     </page>
   </add>
 </diff>

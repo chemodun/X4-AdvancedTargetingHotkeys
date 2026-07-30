@@ -32,9 +32,14 @@
       <t id="1018">Namierz w linii wzroku</t>
       <!-- acquisition - mission -->
       <t id="1019">Namierz aktywny obiekt misji</t>
+      <!-- utility - type filter -->
+      <t id="1020">Zawęź filtr do wybranego typu</t>
       <!-- status messages -->
       <t id="2001">%s: nie znaleziono pasującego celu</t>
       <t id="2002">Nie znaleziono pasującego celu</t>
+      <t id="2003">Filtr zawężony do %s</t>
+      <t id="2004">%s: nie znaleziono niczego typu %s</t>
+      <t id="2005">Najpierw wybierz cel filtrowanym skrótem</t>
       <!-- settings page - hotkey groups -->
       <t id="90100">Grupy skrótów</t>
       <t id="90101">Cele bojowe</t>
@@ -53,6 +58,7 @@
       <t id="90140">Informacja zwrotna</t>
       <t id="90141">Odtwórz dźwięk</t>
       <t id="90142">Pokaż komunikat, gdy nic nie znaleziono</t>
+      <t id="90143">Pokaż komunikat przy zawężeniu filtra</t>
     </page>
   </add>
 </diff>

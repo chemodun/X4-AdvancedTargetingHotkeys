@@ -32,9 +32,14 @@
       <t id="1018">Görüş hattındaki hedefi hedefle</t>
       <!-- acquisition - mission -->
       <t id="1019">Etkin görev nesnesini hedefle</t>
+      <!-- utility - type filter -->
+      <t id="1020">Filtreyi seçili türe daralt</t>
       <!-- status messages -->
       <t id="2001">%s: uygun hedef bulunamadı</t>
       <t id="2002">Uygun hedef bulunamadı</t>
+      <t id="2003">Filtre %s ile sınırlandı</t>
+      <t id="2004">%s: %s türünde bir hedef bulunamadı</t>
+      <t id="2005">Önce filtreli bir kısayolla hedef seçin</t>
       <!-- settings page - hotkey groups -->
       <t id="90100">Kısayol Grupları</t>
       <t id="90101">Savaş Hedefleri</t>
@@ -53,6 +58,7 @@
       <t id="90140">Geri Bildirim</t>
       <t id="90141">Ses çal</t>
       <t id="90142">Hiçbir şey bulunamadığında mesaj göster</t>
+      <t id="90143">Filtre daraltıldığında mesaj göster</t>
     </page>
   </add>
 </diff>

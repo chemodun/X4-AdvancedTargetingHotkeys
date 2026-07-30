@@ -83,6 +83,7 @@ local DEFAULTS = {
   preferVisibleOnLoss    = true,
   soundEnabled           = true,
   notifyOnFailure        = true,
+  notifyOnTypeFilter     = true,
   rangeMultiplier        = 2,
   dockableScanLimit      = 12,
   targetingBackend       = "lua",
@@ -247,6 +248,7 @@ local function BuildSettingsPage()
     { id = "header", name = function() return ReadText(PAGE_ID, 90140) end },
     ToggleRow("ath_sound_toggle", 90141, "soundEnabled", false),
     ToggleRow("ath_notify_toggle", 90142, "notifyOnFailure", false),
+    ToggleRow("ath_notify_type_filter_toggle", 90143, "notifyOnTypeFilter", false),
   }
 end
 
