@@ -18,6 +18,7 @@ Losing a target is the one case where the filter is *not* dropped. In the catego
 
 - **The next one is selected automatically**, and "next" means the entry that followed the one you lost, not merely the closest one. Strip a hull of turrets, clear a wing of fighters, or fly through a field of dropped containers without touching the acquisition key again.
 - **Collectables count as lost when they are collected**, not only when they are shot, so chain-collecting drops works the same way.
+- **A ship that stops being an enemy counts as lost too.** Shoot a fighter until its pilot bails out and the derelict is no longer hostile, so you move on to the next actual threat instead of staying locked onto an empty hull. The same applies to any ownership change. If the new owner is still hostile, nothing happens - your target was and remains valid.
 - **Running out of one type** of surface element (say, the last engine) widens the filter to the remaining surface elements of that same hull rather than dumping you back out to free targeting.
 - **A hull stripped bare** hands you the hull itself.
 - When the category is genuinely empty, **nothing happens at all** - no sound, no message, and your target is left alone. This is a reaction to something dying, not to a key press, so it stays quiet.

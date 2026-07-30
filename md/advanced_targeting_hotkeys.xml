@@ -1281,37 +1281,52 @@
     </cue>
 
     <!--
-      The current target just went away. TWO events, because a target can leave in two
-      different ways and the modes in the auto-shift set span both:
+      The current target stopped being a valid member of the active filter. FOUR events,
+      in two families that need different handling:
 
-        event_object_destroyed  - shot to pieces. param = killer.
-        event_object_picked_up  - collected by someone. param = collector.
+      Family A - the object leaves the world outright:
+        event_object_destroyed  - shot to pieces.        param = killer.
+        event_object_picked_up  - collected by someone.  param = collector.
 
-      A container leaves by being picked up, a lockbox or a wreck leaves by being
-      destroyed, and the collectables mode covers both kinds - so listening for only one
-      would make that mode work for half its own candidate list. Vanilla pairs exactly
-      these two for the same "the thing I was going to collect is gone" question at
-      aiscripts/move.collect.drone.xml:57-65. Multiple events under check_any in one MD
-      cue is ordinary usage; vanilla md/encounters.xml does it with three.
+      Family B - the object stays, but stops belonging to the filter:
+        event_object_abandoned      - its NPCs bailed out. No param.
+        event_object_changed_owner  - param = new owner faction, param2 = previous.
 
-      Either way this fires for ANY actor - the player, the player's fleet, a third
-      party - because both events bind to the object rather than to who acted on it,
-      which is exactly the requirement. Verified in-game 2026-07-30 for the destruction
-      half: it fired for a player kill alongside event_player_killed_object.
+      Family A: a container leaves by being picked up, a lockbox or a wreck leaves by
+      being destroyed, and the collectables mode covers both kinds - so listening for
+      only one would make that mode work for half its own candidate list. Vanilla pairs
+      exactly these two for the same question at aiscripts/move.collect.drone.xml:57-65.
 
-      event.object is the lost object in both cases, so everything below is shared.
+      Family B is the abandoned-ship case: shoot a fighter until its pilot bails and the
+      hull becomes ownerless. It is no longer hostile, so it drops straight out of the
+      enemy filter - but it is still a perfectly real object sitting in space, so nothing
+      in family A ever fires and the player is left locked onto a derelict while the
+      fight continues around them. Vanilla treats these three as one condition for the
+      same kind of question in md/encounters.xml. event_object_changed_true_owner is
+      deliberately NOT included: it fires for the same handovers as changed_owner in the
+      cases that matter here, so it would mostly duplicate.
 
-      The successor is chosen HERE and nowhere else, and that is the whole reason this
-      cue does real work instead of just raising a flag. At this instant the dying
-      object is still returned by finds as operational, so it still has an index in the
-      candidate list - which means the element that FOLLOWS it is knowable. A moment
-      later it is gone from every find, the index is gone with it, and "next" could only
-      ever degrade to "nearest", which is a different thing entirely unless the player
-      happened to be on the closest candidate. NOTE that "still findable at event time"
-      is measured for kills only; if a picked-up container is already gone from
-      find_object by the time its event lands, $index comes back 0 and the no-successor
-      path below takes over. That degrades to nearest rather than breaking, and the log
-      line says which happened.
+      Multiple events under check_any in one MD cue is ordinary usage - no check="false",
+      that is an AI-script idiom. event.object is the lost object in all four, so the
+      body below is shared.
+
+      WHY THE TWO FAMILIES CANNOT SHARE THE SUCCESSOR LOGIC. Family A guarantees the
+      object is on its way out, so finding it still in the candidate list is the useful
+      accident this whole design rests on: it still has an index, so the entry that
+      FOLLOWS it is knowable, and that is what "next" means. Family B guarantees nothing
+      of the sort - an ownership change from one hostile faction to another leaves the
+      target perfectly valid, and shifting away from it would be wrong. So for family B,
+      "still in the list" means the opposite of what it means for family A: it means
+      there is nothing to do at all.
+
+      Hence $objectGone below. Family B that is still in the list aborts without even
+      raising $shiftPending; family B that has dropped out has no recoverable position
+      by definition, so it records no successor and Auto_Shift_Cue takes the nearest.
+
+      NOTE that "still findable at event time" is measured for kills only; if a picked-up
+      container is already gone from find_object by the time its event lands, $index
+      comes back 0 and the no-successor path takes over. That degrades to nearest rather
+      than breaking, and the log line says which happened.
 
       The successor is stored as the object rather than as an index, so re-sorting during
       the wait - the list is ordered by distance and the player is moving - cannot make
@@ -1320,8 +1335,10 @@
     <cue name="Target_Lost" instantiate="true" namespace="this">
       <conditions>
         <check_any>
-          <event_object_destroyed object="Watch_Holder.$watched" />
-          <event_object_picked_up object="Watch_Holder.$watched" />
+          <event_object_destroyed object="Watch_Holder.$watched" check="false" />
+          <event_object_picked_up object="Watch_Holder.$watched" check="false" />
+          <event_object_abandoned object="Watch_Holder.$watched" check="false" />
+          <event_object_changed_owner object="Watch_Holder.$watched" check="false" />
         </check_any>
       </conditions>
       <actions>
@@ -1329,28 +1346,39 @@
         <include_actions ref="LoadState" />
         <include_actions ref="LoadShipContext" />
         <include_actions ref="md.HotkeyApi.GetDebugChance" />
-        <debug_text text="'AdvancedTargetingHotkeys: tracked target %s lost via %s, by %s, mode %s - queueing shift'.[@event.object.debugname, event.name, @event.param.debugname, $state.$mode]"
+        <set_value name="$objectGone" exact="event.name == 'event_object_destroyed' or event.name == 'event_object_picked_up'" />
+        <debug_text text="'AdvancedTargetingHotkeys: tracked target %s lost via %s, by %s, mode %s'.[@event.object.debugname, event.name, @event.param.debugname, $state.$mode]"
           chance="$debugChance" filter="general" />
-        <set_value name="$state.$shiftPending" exact="true" />
-        <set_value name="$state.$shiftTarget" exact="null" />
 
         <set_value name="$mode" exact="$state.$mode" />
         <set_value name="$autoShiftMode" exact="$mode" />
         <include_actions ref="IsAutoShiftMode" />
+        <set_value name="$successor" exact="null" />
+        <set_value name="$abort" exact="false" />
+
         <do_if value="$autoShift">
           <include_actions ref="BuildCandidates" />
           <set_value name="$index" exact="$candidates.indexof.{event.object}" />
-          <do_if value="$index gt 0">
+          <do_if value="$index gt 0 and not $objectGone">
+            <!-- Family B, still a valid candidate: an owner handover between two
+                 hostile factions, or an abandonment that did not change what the
+                 filter thinks of it. Nothing has been lost, so leave the target
+                 alone and do not even arm the pending flag. -->
+            <debug_text text="'AdvancedTargetingHotkeys: target still matches mode %s after %s, no shift'.[$mode, event.name]"
+              chance="$debugChance" filter="general" />
+            <set_value name="$abort" exact="true" />
+          </do_if>
+          <do_elseif value="$index gt 0">
             <do_if value="$index lt $candidates.count">
-              <set_value name="$state.$shiftTarget" exact="$candidates.{$index + 1}" />
+              <set_value name="$successor" exact="$candidates.{$index + 1}" />
             </do_if>
             <do_else>
               <!-- It was the last entry, so wrap, exactly as Next does. -->
-              <set_value name="$state.$shiftTarget" exact="$candidates.{1}" />
+              <set_value name="$successor" exact="$candidates.{1}" />
             </do_else>
-            <debug_text text="'AdvancedTargetingHotkeys: lost target was index %s of %s, successor %s'.[$index, $candidates.count, @$state.$shiftTarget.debugname]"
+            <debug_text text="'AdvancedTargetingHotkeys: lost target was index %s of %s, successor %s'.[$index, $candidates.count, @$successor.debugname]"
               chance="$debugChance" filter="general" />
-          </do_if>
+          </do_elseif>
           <do_else>
             <!-- Not in its own mode's list, so there is no position to preserve.
                  Auto_Shift_Cue falls back to the nearest candidate. -->
@@ -1359,7 +1387,11 @@
           </do_else>
         </do_if>
 
-        <signal_cue_instantly cue="Auto_Shift_Cue" />
+        <do_if value="not $abort">
+          <set_value name="$state.$shiftPending" exact="true" />
+          <set_value name="$state.$shiftTarget" exact="$successor" />
+          <signal_cue_instantly cue="Auto_Shift_Cue" />
+        </do_if>
       </actions>
     </cue>
 
