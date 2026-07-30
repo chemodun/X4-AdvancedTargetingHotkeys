@@ -116,6 +116,8 @@
             $selfChange    = false,
             $shiftPending  = false,
             $shiftTarget   = null,
+            $shiftApplied  = null,
+            $shiftAt       = 0s,
           ]" />
         </do_if>
         <set_value name="$state" exact="player.entity.$AdvancedTargetingHotkeysState" />
@@ -1202,20 +1204,66 @@
             -->
           <do_if value="event.param != null">
             <set_value name="$state.$selfChange" exact="false" />
+            <!--
+              A shift applied from the pending branch below arrives here rather than
+              there, because that apply set $selfChange on its way out and this branch
+              outranks it. Release the hold on our own object, and only on it: when the
+              engine injects a replacement of its own it is this branch that consumes
+              $selfChange, and that event must not be mistaken for the shift landing.
+              -->
+            <do_if value="$state.$shiftPending and event.param == $state.$shiftApplied">
+              <debug_text text="'AdvancedTargetingHotkeys: shift landed on %s, releasing hold on mode %s'.[@event.param.debugname, $state.$mode]"
+                chance="$debugChance" filter="general" />
+              <set_value name="$state.$shiftPending" exact="false" />
+              <set_value name="$state.$shiftApplied" exact="null" />
+            </do_if>
           </do_if>
         </do_if>
-        <do_elseif value="$state.$shiftPending">
+        <do_elseif value="$state.$shiftPending and player.age - $state.$shiftAt lt 2s">
           <!--
-            Our tracked target was destroyed and Auto_Shift_Cue is about to replace it.
-            All invalidation is suppressed until then, because both of the events this
-            death produces would otherwise destroy the very mode the shift needs: the
-            transient null runs ResetMode for every non-surface mode, and the engine's
-            own arbitrary replacement - which it supplies on some kills and not others -
-            runs it for anything that is not a surface element. The shift owns the mode
-            for these few frames and clears the flag itself.
+            Our tracked target left the world and Target_Lost queued its replacement.
+            This is where that replacement is applied - on the engine's own event rather
+            than after a guessed delay, so it always lands strictly after the engine has
+            finished reacting to the loss.
+
+            All ordinary invalidation is suppressed while the flag is up, because every
+            event this loss produces would otherwise destroy the very mode the shift
+            needs: the transient null runs ResetMode for every non-surface mode, and the
+            engine's own arbitrary replacement - which it supplies on some kills and not
+            others - runs it for anything that is not a surface element.
+
+            The flag deliberately survives the apply, and is cleared only by the event
+            carrying the object we ourselves applied. $selfChange cannot do that job
+            here: it is one-shot, and when the engine injects a replacement the queue is
+            null, engine-pick, our-pick - so $selfChange would be spent on the engine's
+            event and OUR change would then read as external and reset the mode.
+
+            The 2s bound on the condition above is the wedge guard. If the target we
+            apply never produces an event at all, the flag would otherwise suppress
+            invalidation for the rest of the session; instead the next target change
+            after that window falls through to normal handling. A stale flag is inert
+            until a target change arrives, so no timer is needed to police it.
             -->
-          <debug_text text="'AdvancedTargetingHotkeys: shift pending, ignoring target change to %s, holding mode %s'.[@event.param.debugname, $state.$mode]"
-            chance="$debugChance" filter="general" />
+          <do_if value="$state.$shiftTarget != null">
+            <set_value name="$thing" exact="$state.$shiftTarget" />
+            <set_value name="$state.$shiftTarget" exact="null" />
+            <set_value name="$state.$shiftApplied" exact="$thing" />
+            <set_value name="$mode" exact="$state.$mode" />
+            <debug_text text="'AdvancedTargetingHotkeys: shift pending, applying %s on target change to %s, mode %s'.[$thing.debugname, @event.param.debugname, $mode]"
+              chance="$debugChance" filter="general" />
+            <include_actions ref="LoadConfig" />
+            <include_actions ref="ApplyTarget" />
+          </do_if>
+          <do_elseif value="event.param != null and event.param == $state.$shiftApplied">
+            <debug_text text="'AdvancedTargetingHotkeys: shift landed on %s, releasing hold on mode %s'.[@event.param.debugname, $state.$mode]"
+              chance="$debugChance" filter="general" />
+            <set_value name="$state.$shiftPending" exact="false" />
+            <set_value name="$state.$shiftApplied" exact="null" />
+          </do_elseif>
+          <do_else>
+            <debug_text text="'AdvancedTargetingHotkeys: shift pending, ignoring target change to %s, holding mode %s'.[@event.param.debugname, $state.$mode]"
+              chance="$debugChance" filter="general" />
+          </do_else>
         </do_elseif>
         <do_else>
           <do_if value="event.param == null">
@@ -1306,30 +1354,36 @@
       deliberately NOT included: it fires for the same handovers as changed_owner in the
       cases that matter here, so it would mostly duplicate.
 
-      Multiple events under check_any in one MD cue is ordinary usage - no check="false",
-      that is an AI-script idiom. event.object is the lost object in all four, so the
-      body below is shared.
+      Multiple events under check_any in one MD cue is ordinary usage. check="false" only
+      suppresses the "event object does not exist" error, which Watch_Holder.$watched
+      being null would otherwise produce on every registration. event.object is the lost
+      object in all four, so the body below is shared.
 
-      WHY THE TWO FAMILIES CANNOT SHARE THE SUCCESSOR LOGIC. Family A guarantees the
+      THE TWO FAMILIES READ THE SAME TEST IN OPPOSITE DIRECTIONS. Family A guarantees the
       object is on its way out, so finding it still in the candidate list is the useful
       accident this whole design rests on: it still has an index, so the entry that
       FOLLOWS it is knowable, and that is what "next" means. Family B guarantees nothing
       of the sort - an ownership change from one hostile faction to another leaves the
       target perfectly valid, and shifting away from it would be wrong. So for family B,
       "still in the list" means the opposite of what it means for family A: it means
-      there is nothing to do at all.
+      there is nothing to do at all. Hence $objectGone.
 
-      Hence $objectGone below. Family B that is still in the list aborts without even
-      raising $shiftPending; family B that has dropped out has no recoverable position
-      by definition, so it records no successor and Auto_Shift_Cue takes the nearest.
+      THEY ALSO APPLY AT DIFFERENT TIMES, and that is the other half of $objectGone's job.
+      Family B applies immediately, right here, exactly like a hotkey press - the object
+      never left the world, so the engine raises nothing about it and there is nothing to
+      sit out. Family A queues into $state.$shiftTarget and lets On_Target_Changed apply
+      it when the engine's own event arrives, which is strictly after the engine has
+      finished reacting to the loss. Waiting for that event in family B would be waiting
+      for something that never comes; applying immediately in family A would be a race
+      against the engine's own retargeting.
 
       NOTE that "still findable at event time" is measured for kills only; if a picked-up
       container is already gone from find_object by the time its event lands, $index
-      comes back 0 and the no-successor path takes over. That degrades to nearest rather
-      than breaking, and the log line says which happened.
+      comes back 0 and the from-the-front path takes over. That degrades to nearest
+      rather than breaking, and the log line says which happened.
 
-      The successor is stored as the object rather than as an index, so re-sorting during
-      the wait - the list is ordered by distance and the player is moving - cannot make
+      The pick is stored as the object rather than as an index, so re-sorting before it
+      is applied - the list is ordered by distance and the player is moving - cannot make
       it point at something else.
       -->
     <cue name="Target_Lost" instantiate="true" namespace="this">
@@ -1353,158 +1407,105 @@
         <set_value name="$mode" exact="$state.$mode" />
         <set_value name="$autoShiftMode" exact="$mode" />
         <include_actions ref="IsAutoShiftMode" />
-        <set_value name="$successor" exact="null" />
-        <set_value name="$abort" exact="false" />
 
         <do_if value="$autoShift">
           <include_actions ref="BuildCandidates" />
           <set_value name="$index" exact="$candidates.indexof.{event.object}" />
+          <set_value name="$thing" exact="null" />
+
           <do_if value="$index gt 0 and not $objectGone">
             <!-- Family B, still a valid candidate: an owner handover between two
-                 hostile factions, or an abandonment that did not change what the
-                 filter thinks of it. Nothing has been lost, so leave the target
-                 alone and do not even arm the pending flag. -->
+                 hostile factions, or an abandonment the filter does not care about.
+                 Nothing has been lost, so leave the target exactly as it is. -->
             <debug_text text="'AdvancedTargetingHotkeys: target still matches mode %s after %s, no shift'.[$mode, event.name]"
               chance="$debugChance" filter="general" />
-            <set_value name="$abort" exact="true" />
           </do_if>
-          <do_elseif value="$index gt 0">
-            <do_if value="$index lt $candidates.count">
-              <set_value name="$successor" exact="$candidates.{$index + 1}" />
-            </do_if>
-            <do_else>
-              <!-- It was the last entry, so wrap, exactly as Next does. -->
-              <set_value name="$successor" exact="$candidates.{1}" />
-            </do_else>
-            <debug_text text="'AdvancedTargetingHotkeys: lost target was index %s of %s, successor %s'.[$index, $candidates.count, @$successor.debugname]"
-              chance="$debugChance" filter="general" />
-          </do_elseif>
           <do_else>
-            <!-- Not in its own mode's list, so there is no position to preserve.
-                 Auto_Shift_Cue falls back to the nearest candidate. -->
-            <debug_text text="'AdvancedTargetingHotkeys: lost target not in mode %s list of %s, no successor recorded'.[$mode, $candidates.count]"
-              chance="$debugChance" filter="general" />
-          </do_else>
-        </do_if>
-
-        <do_if value="not $abort">
-          <set_value name="$state.$shiftPending" exact="true" />
-          <set_value name="$state.$shiftTarget" exact="$successor" />
-          <signal_cue_instantly cue="Auto_Shift_Cue" />
-        </do_if>
-      </actions>
-    </cue>
-
-    <!--
-      Replaces a destroyed target with the next candidate of the same mode.
-
-      The delay is the whole point of this cue existing separately. Measured on
-      2026-07-30: the destruction event lands ~0.08s before event_player_changed_target,
-      and at that moment the dying object is still returned by finds as operational,
-      player.target still points at it, and the engine may still inject a replacement of
-      its own. Acting immediately would therefore re-pick the corpse or start a tug of
-      war over the target. Waiting a fraction of a second lets all of that settle, and
-      then a perfectly ordinary rebuild-and-pick does the right thing with no special
-      cases - the corpse is simply gone from the candidate list.
-
-      Kept off Target_Lost itself so that re-arming the watcher, which resets that
-      cue, can never cancel a shift already in flight.
-      -->
-    <cue name="Auto_Shift_Cue" instantiate="true" namespace="this">
-      <conditions>
-        <event_cue_signalled />
-      </conditions>
-      <delay exact="0.25s" />
-      <actions>
-        <include_actions ref="LoadConfig" />
-        <include_actions ref="LoadState" />
-        <include_actions ref="LoadShipContext" />
-        <include_actions ref="md.HotkeyApi.GetDebugChance" />
-        <!-- Released here, whatever happens below, so one death can never shift twice
-             and a mode that turns out not to want shifting cannot wedge the flag on. -->
-        <set_value name="$state.$shiftPending" exact="false" />
-        <set_value name="$queued" exact="$state.$shiftTarget" />
-        <set_value name="$state.$shiftTarget" exact="null" />
-
-        <set_value name="$mode" exact="$state.$mode" />
-        <set_value name="$autoShiftMode" exact="$mode" />
-        <include_actions ref="IsAutoShiftMode" />
-        <do_if value="$autoShift">
-          <include_actions ref="BuildCandidates" />
-          <set_value name="$thing" exact="null" />
-          <!--
-            The successor Target_Lost worked out while the dying target still had an
-            index. First choice, and it deliberately overrides whatever the engine may
-            have picked in the meantime: the engine's choice is arbitrary and ignores the
-            active filter, whereas this is genuinely the next entry the player would have
-            reached by pressing Next. Re-validated because the wait is long enough for it
-            to have died too - a hull under fire loses more than one element.
-            -->
-          <do_if value="$queued != null and @$queued.isoperational">
-            <set_value name="$thing" exact="$queued" />
-            <debug_text text="'AdvancedTargetingHotkeys: shifting to recorded successor %s'.[$queued.debugname]"
-              chance="$debugChance" filter="general" />
-          </do_if>
-          <!--
-            No usable successor. If the engine already left us on something this mode
-            would have offered anyway, leave it alone rather than making the HUD flicker.
-            This is also what makes a stale watcher harmless: it fires, finds the current
-            target is fine, and does nothing.
-            -->
-          <do_elseif value="@player.target != null and $candidates.indexof.{player.target} gt 0">
-            <debug_text text="'AdvancedTargetingHotkeys: shift not needed, target %s is already in mode %s'.[@player.target.debugname, $mode]"
-              chance="$debugChance" filter="general" />
-            <!--
-              Still re-arm. Nothing else will: the watcher is currently bound to the
-              object that just died, so without this it would never fire again and the
-              *next* death would go unnoticed.
-              -->
-            <set_value name="$armTarget" exact="player.target" />
-            <set_value name="$armMode" exact="$mode" />
-            <include_actions ref="ArmLossWatch" />
-            <do_if value="player.target.issurfaceelement">
-              <set_value name="$state.$surfaceTarget" exact="player.target" />
+            <do_if value="$candidates.count gt 0">
+              <do_if value="$index gt 0 and $index lt $candidates.count">
+                <set_value name="$thing" exact="$candidates.{$index + 1}" />
+              </do_if>
+              <do_else>
+                <!-- Either it was the last entry, so wrap exactly as Next does, or it
+                     is not in this list at all - family B always lands here, since
+                     dropping out of the filter is the very reason it fired - and then
+                     there is no position to resume from. Both start from the front. -->
+                <set_value name="$thing" exact="$candidates.{1}" />
+              </do_else>
+              <do_if value="$thing == event.object">
+                <!-- The only entry was the one we just lost. -->
+                <set_value name="$thing" exact="null" />
+              </do_if>
             </do_if>
-          </do_elseif>
-          <do_elseif value="$candidates.count gt 0">
-            <!-- Last resort only: with no successor recorded and nothing valid held,
-                 there is no position left to preserve, so take the nearest. -->
-            <set_value name="$thing" exact="$candidates.{1}" />
-          </do_elseif>
-          <do_elseif value="$state.$surfaceParent != null">
-            <!--
-              Last step of the surface chain. BuildCandidates has already widened a
-              filtered mode to every remaining element on the hull, so an empty group
-              here means the hull has been stripped bare - fall back to the hull itself
-              rather than dropping the player's target entirely.
-              -->
-            <do_if value="@$state.$surfaceParent.isknown and @$state.$surfaceParent.isradarvisible">
-              <set_value name="$thing" exact="$state.$surfaceParent" />
-              <debug_text text="'AdvancedTargetingHotkeys: hull %s has no elements left, falling back to the hull itself'.[$state.$surfaceParent.debugname]"
+
+            <do_if value="$thing == null and $state.$surfaceParent != null">
+              <!--
+                Last step of the surface chain. BuildCandidates has already widened a
+                filtered mode to every remaining element on the hull, so getting here
+                means the hull has been stripped bare - fall back to the hull itself
+                rather than dropping the player's target entirely.
+                -->
+              <do_if value="@$state.$surfaceParent.isknown and @$state.$surfaceParent.isradarvisible">
+                <set_value name="$thing" exact="$state.$surfaceParent" />
+                <debug_text text="'AdvancedTargetingHotkeys: hull %s has no elements left, falling back to the hull itself'.[$state.$surfaceParent.debugname]"
+                  chance="$debugChance" filter="general" />
+              </do_if>
+            </do_if>
+
+            <do_if value="$thing != null and not $objectGone">
+              <!--
+                FAMILY B APPLIES RIGHT HERE, exactly like a hotkey press. The object did
+                not leave the world, it only left the filter, so the engine is not about
+                to raise anything about it - there is no null to sit out and nothing to
+                race. Waiting would mean waiting for an event that never comes.
+                -->
+              <debug_text text="'AdvancedTargetingHotkeys: shifting to %s, mode %s, %s candidates'.[$thing.debugname, $mode, $candidates.count]"
                 chance="$debugChance" filter="general" />
+              <include_actions ref="ApplyTarget" />
+              <!-- BuildCandidates may have downgraded a filtered surface mode. -->
+              <set_value name="$state.$mode" exact="$mode" />
+              <include_actions ref="IsSurfaceMode" />
+              <do_if value="$isSurfaceMode">
+                <set_value name="$state.$surfaceMode" exact="$mode" />
+              </do_if>
             </do_if>
-          </do_elseif>
+            <do_elseif value="$thing != null">
+              <!--
+                FAMILY A QUEUES INSTEAD. The object is on its way out, so the engine is
+                about to raise event_player_changed_target - a null, and on some kills a
+                replacement of its own. On_Target_Changed's pending branch applies this
+                there, which is strictly after the engine has had its say rather than a
+                guess at how long that takes.
+                -->
+              <set_value name="$state.$shiftTarget" exact="$thing" />
+              <set_value name="$state.$shiftPending" exact="true" />
+              <set_value name="$state.$shiftAt" exact="player.age" />
+              <!-- Persisted now rather than at apply time: BuildCandidates may have
+                   downgraded a filtered surface mode to surfaceAll while picking, and
+                   the pending branch only applies the object, not the mode. -->
+              <set_value name="$state.$mode" exact="$mode" />
+              <include_actions ref="IsSurfaceMode" />
+              <do_if value="$isSurfaceMode">
+                <set_value name="$state.$surfaceMode" exact="$mode" />
+              </do_if>
+              <debug_text text="'AdvancedTargetingHotkeys: queueing shift to %s, lost was index %s of %s, mode %s'.[$thing.debugname, $index, $candidates.count, $mode]"
+                chance="$debugChance" filter="general" />
+            </do_elseif>
+            <do_else>
+              <!--
+                Nothing to shift to. Silent on purpose: no fail sound and no ticker,
+                which is why ApplyTarget - whose else branch does both - is not called at
+                all here. This is a passive reaction to a target dying, being collected
+                or changing hands, not a key press, and announcing "no matching target
+                found" after the last kill of every fight would be noise.
 
-          <do_if value="$thing != null">
-            <debug_text text="'AdvancedTargetingHotkeys: shifting to %s, mode %s, %s candidates'.[$thing.debugname, $mode, $candidates.count]"
-              chance="$debugChance" filter="general" />
-            <include_actions ref="ApplyTarget" />
-            <!-- BuildCandidates may have downgraded a filtered surface mode. -->
-            <set_value name="$state.$mode" exact="$mode" />
-            <include_actions ref="IsSurfaceMode" />
-            <do_if value="$isSurfaceMode">
-              <set_value name="$state.$surfaceMode" exact="$mode" />
-            </do_if>
-          </do_if>
-          <do_else>
-            <!--
-              Nothing left to shift to. Silent on purpose: no fail sound and no ticker.
-              This is a passive reaction to a target dying or being collected, not a key press, and
-              announcing "no matching target found" after the last kill of every fight
-              would be noise. The keypress path still reports failure as it always did.
-              -->
-            <debug_text text="'AdvancedTargetingHotkeys: nothing left to shift to for mode %s, leaving target alone'.[$mode]"
-              chance="$debugChance" filter="general" />
+                $shiftPending is deliberately NOT raised: with nothing queued there would
+                be nothing to clear it, and On_Target_Changed would swallow every later
+                target change. Normal invalidation runs instead.
+                -->
+              <debug_text text="'AdvancedTargetingHotkeys: nothing left to shift to for mode %s, leaving target alone'.[$mode]"
+                chance="$debugChance" filter="general" />
+            </do_else>
           </do_else>
         </do_if>
         <do_else>
