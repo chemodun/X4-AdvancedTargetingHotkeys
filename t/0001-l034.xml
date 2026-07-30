@@ -48,6 +48,7 @@
       <t id="90121">Mantener el filtro tras fijar un objetivo</t>
       <t id="90122">Multiplicador de alcance ampliado</t>
       <t id="90123">Naves propias comprobadas por un muelle libre</t>
+      <t id="90124">Preferir elementos de superficie visibles al perder un objetivo</t>
       <!-- settings page - feedback -->
       <t id="90140">Respuesta</t>
       <t id="90141">Reproducir un sonido</t>

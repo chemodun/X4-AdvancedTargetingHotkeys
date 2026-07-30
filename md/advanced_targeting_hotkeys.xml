@@ -28,6 +28,7 @@
             $soundEnabled           = true,
             $notifyOnFailure        = true,
             $stickyModeEnabled      = true,
+            $preferVisibleOnLoss    = true,
             $dockableScanLimit      = 12,
             $targetingBackend       = 'lua',
           ]" />
@@ -63,6 +64,9 @@
         </do_if>
         <do_if value="not $config.$stickyModeEnabled?">
           <set_value name="$config.$stickyModeEnabled" exact="true" />
+        </do_if>
+        <do_if value="not $config.$preferVisibleOnLoss?">
+          <set_value name="$config.$preferVisibleOnLoss" exact="true" />
         </do_if>
         <do_if value="not $config.$dockableScanLimit?">
           <set_value name="$config.$dockableScanLimit" exact="12" />
@@ -1180,6 +1184,10 @@
           <include_actions ref="BuildCandidates" />
           <set_value name="$index" exact="$candidates.indexof.{event.object}" />
           <set_value name="$thing" exact="null" />
+          <!-- Logged here rather than at the queueing line, so the log reads in the order the
+               cue runs: index first, then whatever the walk does with it. -->
+          <debug_text text="'AdvancedTargetingHotkeys: lost %s is index %s of %s candidates, mode %s'.[@event.object.debugname, $index, $candidates.count, $mode]"
+            chance="$debugChance" filter="general" />
 
           <do_if value="$index gt 0 and not $objectGone">
             <!-- Family B, still valid - an owner handover between hostiles. Leave the target alone. -->
@@ -1196,6 +1204,51 @@
                      Both resume from the front. -->
                 <set_value name="$thing" exact="$candidates.{1}" />
               </do_else>
+
+              <!-- Surface elements only: walk on from the same starting point, wrapping, and take
+                   the first one the player has line of sight to. A walk that finds none leaves
+                   $thing as the plain next-by-index, so this only ever upgrades the pick. -->
+              <include_actions ref="IsSurfaceMode" />
+              <do_if value="$config.$preferVisibleOnLoss and $isSurfaceMode">
+                <set_value name="$visiblePick" exact="null" />
+                <set_value name="$pickSlot" exact="0" />
+                <set_value name="$hidden" exact="0" />
+                <set_value name="$startSlot" exact="$index + 1" />
+                <do_if value="$startSlot gt $candidates.count">
+                  <set_value name="$startSlot" exact="1" />
+                </do_if>
+                <debug_text text="'AdvancedTargetingHotkeys: visibility walk starting at slot %s of %s, next by index is %s'.[$startSlot, $candidates.count, $thing.debugname]"
+                  chance="$debugChance" filter="general" />
+                <do_all counter="$step" exact="$candidates.count">
+                  <set_value name="$slot" exact="$index + $step" />
+                  <do_if value="$slot gt $candidates.count">
+                    <set_value name="$slot" exact="$slot - $candidates.count" />
+                  </do_if>
+                  <set_value name="$candidate" exact="$candidates.{$slot}" />
+                  <do_if value="$candidate != event.object">
+                    <!-- useaimtarget resolves the target the way weapon aiming does, so this asks
+                         "can I shoot it from here". The element's own hull stays in the cast, which
+                         is what blocks one on the far side. -->
+                    <check_line_of_sight name="$elementVisible" object="$ownShip" target="$candidate" useaimtarget="true" />
+                    <do_if value="$elementVisible">
+                      <set_value name="$visiblePick" exact="$candidate" />
+                      <set_value name="$pickSlot" exact="$slot" />
+                      <break />
+                    </do_if>
+                    <set_value name="$hidden" exact="$hidden + 1" />
+                  </do_if>
+                </do_all>
+                <do_if value="$visiblePick != null">
+                  <debug_text text="'AdvancedTargetingHotkeys: visibility walk skipped %s blocked, picked %s at slot %s'.[$hidden, $visiblePick.debugname, $pickSlot]"
+                    chance="$debugChance" filter="general" />
+                  <set_value name="$thing" exact="$visiblePick" />
+                </do_if>
+                <do_else>
+                  <debug_text text="'AdvancedTargetingHotkeys: visibility walk found nothing in sight after a full round, keeping next by index %s'.[$thing.debugname]"
+                    chance="$debugChance" filter="general" />
+                </do_else>
+              </do_if>
+
               <do_if value="$thing == event.object">
                 <!-- The only entry was the one we just lost. -->
                 <set_value name="$thing" exact="null" />
@@ -1235,7 +1288,7 @@
               <do_if value="$isSurfaceMode">
                 <set_value name="$state.$surfaceMode" exact="$mode" />
               </do_if>
-              <debug_text text="'AdvancedTargetingHotkeys: queueing shift to %s, lost was index %s of %s, mode %s'.[$thing.debugname, $index, $candidates.count, $mode]"
+              <debug_text text="'AdvancedTargetingHotkeys: queueing shift to %s, mode %s'.[$thing.debugname, $mode]"
                 chance="$debugChance" filter="general" />
             </do_elseif>
             <do_else>

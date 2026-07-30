@@ -48,6 +48,7 @@
       <t id="90121">Conserver le filtre après acquisition</t>
       <t id="90122">Multiplicateur de portée étendue</t>
       <t id="90123">Vaisseaux vérifiés pour un dock libre</t>
+      <t id="90124">Préférer les éléments de surface visibles à la perte d'une cible</t>
       <!-- settings page - feedback -->
       <t id="90140">Retour</t>
       <t id="90141">Jouer un son</t>

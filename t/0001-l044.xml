@@ -48,6 +48,7 @@
       <t id="90121">Keep the filter after acquiring a target</t>
       <t id="90122">Extended range multiplier</t>
       <t id="90123">Own ships checked for a free dock</t>
+      <t id="90124">Prefer visible surface elements when a target is lost</t>
       <!-- settings page - feedback -->
       <t id="90140">Feedback</t>
       <t id="90141">Play a sound</t>

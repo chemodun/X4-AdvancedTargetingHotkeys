@@ -80,6 +80,7 @@ local DEFAULTS = {
   groupSurfaceEnabled    = true,
   groupMissionEnabled    = true,
   stickyModeEnabled      = true,
+  preferVisibleOnLoss    = true,
   soundEnabled           = true,
   notifyOnFailure        = true,
   rangeMultiplier        = 2,
@@ -240,6 +241,7 @@ local function BuildSettingsPage()
     ToggleRow("ath_sticky_mode_toggle", 90121, "stickyModeEnabled", false),
     SliderRow("ath_range_multiplier", 90122, "rangeMultiplier", 1, 5, 1),
     SliderRow("ath_dockable_scan_limit", 90123, "dockableScanLimit", 1, 50, 1),
+    ToggleRow("ath_prefer_visible_toggle", 90124, "preferVisibleOnLoss", false),
 
     { id = "line" },
     { id = "header", name = function() return ReadText(PAGE_ID, 90140) end },
