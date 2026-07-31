@@ -12,7 +12,7 @@ The filter is dropped the moment the target changes any other way - a mouse clic
 
 [b]Narrow Filter to Selected Type[/b] pins the filter one step further, to the exact type of the current target: one turret model on a destroyer, or one ship type out of a mixed enemy wing.
 
-[h2]When the target is lost[/h2]
+[h2]Auto-switch when target is lost[/h2]
 
 Losing a target is the one case where the filter isn't dropped. For enemies, incoming missiles, collectables and surface elements, the next one is selected automatically - "next" being the entry that followed the one you lost, not just the closest one:
 [list]
@@ -41,6 +41,11 @@ Navigation categories - own ships, stations, gates, asteroids, mission targets -
 [list]
 [*] Available on Nexus Mods: [url=https://www.nexusmods.com/x4foundations/mods/552]UI Extensions and HUD[/url]
 [/list]
+[/list]
+[h2][b]Installation[/b][/h2]
+[list]
+[*] [b]Steam Workshop[/b]: [url=https://steamcommunity.com/sharedfiles/filedetails/?id=]Advanced Targeting Hotkeys[/url] - only for [b]Game version 9.00[/b] with latest Steam version of the [b]UI Extensions and HUD[/b] mod (indirectly).
+[*] [b]Nexus Mods[/b]: [url=https://www.nexusmods.com/x4foundations/mods/2278]Advanced Targeting Hotkeys[/url]
 [/list]
 [h2][b]Hotkeys[/b][/h2]
 
@@ -101,7 +106,11 @@ Two vanilla controls are left alone on purpose: [b]Toggle Target Lock[/b] isn't 
 
 [h2][b]Settings[/b][/h2]
 
+[img]https://raw.githubusercontent.com/chemodun/X4-AdvancedTargetingHotkeys/refs/heads/main/docs/images/hotkey_api.png[/img]
+
 Everything is configurable under [b]Options > Hotkey Management > Advanced Targeting Hotkeys[/b], on the same page you bind the keys on rather than under a separate Extensions entry.
+
+[img]https://raw.githubusercontent.com/chemodun/X4-AdvancedTargetingHotkeys/refs/heads/main/docs/images/settings.png[/img]
 
 [b]Hotkey Groups[/b] - which families of hotkeys get registered at all. All enabled by default:
 [list]
@@ -135,10 +144,6 @@ This mod has no debug switch of its own - it follows the [i]Native Hotkey API[/i
 
 You then get one line per key press (which hotkey, which filter, what got targeted or why nothing did) plus the detail behind it. Lines are prefixed [b]AdvancedTargetingHotkeys:[/b] and use the [b]general[/b] filter, so start the game with [b]-debug general -logfile debuglog.txt[/b] to capture them.
 
-[h2]Setting not on the page[/h2]
-
-`$targetingBackend`, in the [b]__ADVANCED_TARGETING_HOTKEYS_DATA[/b] profile data, is a troubleshooting switch rather than a preference. [b]'lua'[/b] (default) applies the target through this mod's UI script using the same engine call the game uses for component slots, which covers surface elements. [b]'md'[/b] uses the Mission Director's [b]set_player_target[/b] instead - simpler, but not confirmed to work on surface elements.
-
 [h2][b]Limitations[/b][/h2]
 [list]
 [*] Pilot mode only. There are no map-mode or on-foot variants.
@@ -158,7 +163,7 @@ You then get one line per key press (which hotkey, which filter, what got target
 [/list]
 [h2][b]Changelog[/b][/h2]
 
-[h2][1.00] - 2026-07-29[/h2]
+[h2][1.00] - 2026-07-31[/h2]
 [list]
 [*] [b]Added[/b]
 [list]
