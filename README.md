@@ -144,6 +144,10 @@ You then get one line per key press (which hotkey, which filter, what got target
 - Candidate lists are rebuilt on every key press, so they always match the current situation. On a station with hundreds of surface elements that's measurable work per press.
 - The *Native Hotkey API*'s 48-slot pool is shared with every mod using it. This one asks for 20 with everything enabled.
 
+## Videos
+
+- [Simple demonstration of features](https://www.youtube.com/watch?v=VDMxgQFWeB4)
+
 ## Credits
 
 - **Author**: Chem O`Dun, on [Nexus Mods](https://next.nexusmods.com/profile/ChemODun/mods?gameId=2659) and [Steam Workshop](https://steamcommunity.com/id/chemodun/myworkshopfiles/?appid=392160)
