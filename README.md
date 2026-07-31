@@ -38,7 +38,7 @@ Navigation categories - own ships, stations, gates, asteroids, mission targets -
 
 ## Installation
 
-- **Steam Workshop**: [Advanced Targeting Hotkeys](https://steamcommunity.com/sharedfiles/filedetails/?id=) - only for **Game version 9.00** with latest Steam version of the `UI Extensions and HUD` mod (indirectly).
+- **Steam Workshop**: [Advanced Targeting Hotkeys](https://steamcommunity.com/sharedfiles/filedetails/?id=3775194109) - only for **Game version 9.00** with latest Steam version of the `UI Extensions and HUD` mod (indirectly).
 - **Nexus Mods**: [Advanced Targeting Hotkeys](https://www.nexusmods.com/x4foundations/mods/2278)
 
 ## Hotkeys
