@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <content
-  id="advanced_targeting_hotkeys"
+  id="ws_3775194109"
   name="Advanced Targeting Hotkeys"
   author="Chem O`Dun"
   version="100"
@@ -8,6 +8,7 @@
   save="false"
   sync="false"
   enabled="true"
+  lastupdate="1785525939"
   description="Filtered targeting hotkeys built on the Native Hotkey API: acquire the nearest enemy by size, incoming missile, own ship, dockable own ship, station, gate, collectable, asteroid or surface element (engines/turrets/shields), then cycle only within that filter. Includes a widening-cone line-of-sight pick.">
   <text language="7"
     description="Filtered targeting hotkeys built on the Native Hotkey API: acquire the nearest enemy by size, incoming missile, own ship, dockable own ship, station, gate, collectable, asteroid or surface element (engines/turrets/shields), then cycle only within that filter. Includes a widening-cone line-of-sight pick."></text>
