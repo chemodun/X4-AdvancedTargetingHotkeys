@@ -212,55 +212,56 @@
       </actions>
     </library>
 
-    <!-- $mode -> the text id of the hotkey that establishes it, so a failure notification
-         can name the category asked for. 0 is free mode, rendered as the generic message. -->
+    <!-- $mode -> the name of the hotkey that establishes it, so a failure notification can name
+         the category asked for. null is free mode, rendered as the generic message. The text is
+         resolved here, not passed on as an id: a {page, id} lookup takes literals only. -->
     <library name="ResolveModeName" purpose="include_actions">
       <actions>
-        <set_value name="$nameId" exact="0" />
+        <set_value name="$modeName" exact="null" />
         <do_if value="$mode == 'enemyAll'">
-          <set_value name="$nameId" exact="1001" />
+          <set_value name="$modeName" exact="{1972092437, 1001}" />
         </do_if>
         <do_elseif value="$mode == 'enemySmall'">
-          <set_value name="$nameId" exact="1002" />
+          <set_value name="$modeName" exact="{1972092437, 1002}" />
         </do_elseif>
         <do_elseif value="$mode == 'enemyLarge'">
-          <set_value name="$nameId" exact="1003" />
+          <set_value name="$modeName" exact="{1972092437, 1003}" />
         </do_elseif>
         <do_elseif value="$mode == 'missiles'">
-          <set_value name="$nameId" exact="1004" />
+          <set_value name="$modeName" exact="{1972092437, 1004}" />
         </do_elseif>
         <do_elseif value="$mode == 'ownAll'">
-          <set_value name="$nameId" exact="1005" />
+          <set_value name="$modeName" exact="{1972092437, 1005}" />
         </do_elseif>
         <do_elseif value="$mode == 'ownDockable'">
-          <set_value name="$nameId" exact="1006" />
+          <set_value name="$modeName" exact="{1972092437, 1006}" />
         </do_elseif>
         <do_elseif value="$mode == 'stations'">
-          <set_value name="$nameId" exact="1007" />
+          <set_value name="$modeName" exact="{1972092437, 1007}" />
         </do_elseif>
         <do_elseif value="$mode == 'gates'">
-          <set_value name="$nameId" exact="1008" />
+          <set_value name="$modeName" exact="{1972092437, 1008}" />
         </do_elseif>
         <do_elseif value="$mode == 'collectables'">
-          <set_value name="$nameId" exact="1009" />
+          <set_value name="$modeName" exact="{1972092437, 1009}" />
         </do_elseif>
         <do_elseif value="$mode == 'asteroids'">
-          <set_value name="$nameId" exact="1010" />
+          <set_value name="$modeName" exact="{1972092437, 1010}" />
         </do_elseif>
         <do_elseif value="$mode == 'surfaceAll'">
-          <set_value name="$nameId" exact="1011" />
+          <set_value name="$modeName" exact="{1972092437, 1011}" />
         </do_elseif>
         <do_elseif value="$mode == 'surfaceEngines'">
-          <set_value name="$nameId" exact="1012" />
+          <set_value name="$modeName" exact="{1972092437, 1012}" />
         </do_elseif>
         <do_elseif value="$mode == 'surfaceTurrets'">
-          <set_value name="$nameId" exact="1013" />
+          <set_value name="$modeName" exact="{1972092437, 1013}" />
         </do_elseif>
         <do_elseif value="$mode == 'surfaceShields'">
-          <set_value name="$nameId" exact="1014" />
+          <set_value name="$modeName" exact="{1972092437, 1014}" />
         </do_elseif>
         <do_elseif value="$mode == 'mission'">
-          <set_value name="$nameId" exact="1019" />
+          <set_value name="$modeName" exact="{1972092437, 1019}" />
         </do_elseif>
       </actions>
     </library>
@@ -583,13 +584,13 @@
           </do_if>
           <do_if value="$config.$notifyOnFailure">
             <include_actions ref="ResolveModeName" />
-            <do_if value="$config.$stickyModeEnabled and $state.$macroFilter != null and $nameId != 0">
+            <do_if value="$config.$stickyModeEnabled and $state.$macroFilter != null and $modeName != null">
               <set_value name="$filterMacro" exact="$state.$macroFilter" />
               <include_actions ref="ResolveMacroName" />
-              <show_notification text="{1972092437, 2004}.[{1972092437, $nameId}, $macroName]" />
+              <show_notification text="{1972092437, 2004}.[$modeName, $macroName]" />
             </do_if>
-            <do_elseif value="$nameId != 0">
-              <show_notification text="{1972092437, 2001}.[{1972092437, $nameId}]" />
+            <do_elseif value="$modeName != null">
+              <show_notification text="{1972092437, 2001}.[$modeName]" />
             </do_elseif>
             <do_else>
               <show_notification text="{1972092437, 2002}" />
