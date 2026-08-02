@@ -161,6 +161,11 @@ You then get one line per key press (which hotkey, which filter, what got target
 
 ## Changelog
 
+### [1.01] - 2026-08-??
+
+- **Fixed**
+  - The "no matching target" notifications never appeared - the message text was assembled in a way the script parser rejected.
+
 ### [1.00] - 2026-07-31
 
 - **Added**
