@@ -167,6 +167,13 @@ You then get one line per key press (which hotkey, which filter, what got target
 [/list]
 [size=130][u]Changelog[/u][/size]
 
+[size=125][u][1.01] - 2026-08-??[/u][/size]
+[list]
+[*] [b]Fixed[/b]
+[list]
+[*] The "no matching target" notifications never appeared - the message text was assembled in a way the script parser rejected.
+[/list]
+[/list]
 [size=125][u][1.00] - 2026-07-31[/u][/size]
 [list]
 [*] [b]Added[/b]
