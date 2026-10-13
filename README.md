@@ -22,7 +22,7 @@ Losing a target is the one case where the filter isn't dropped. For enemies, inc
 - When the last element of a kind is gone you get **the hull itself**, never a different kind of element, and any type narrowing is cleared with it.
 - If the category is empty, nothing happens at all - no sound, no message, target left alone.
 
-Navigation categories - own ships, stations, gates, asteroids, mission targets - deliberately don't do this.
+Navigation categories - own ships, stations, gates, asteroids, mission targets - deliberately don't do this. By default, destroying the target there drops the filter like any other target change; with **Keep the filter when the target is destroyed** on, the category and any type narrowing stay, and Next/Previous carry on from there.
 
 ## Requirements
 
@@ -40,6 +40,10 @@ Navigation categories - own ships, stations, gates, asteroids, mission targets -
 
 - **Steam Workshop**: [Advanced Targeting Hotkeys](https://steamcommunity.com/sharedfiles/filedetails/?id=3775194109) - only for **Game version 9.00** with latest Steam version of the `UI Extensions and HUD` mod (indirectly).
 - **Nexus Mods**: [Advanced Targeting Hotkeys](https://www.nexusmods.com/x4foundations/mods/2278)
+
+## Save state
+
+**No** (removing the extension does not break saves).
 
 ## Hotkeys
 
@@ -63,7 +67,7 @@ Each of these targets the nearest match and switches the filter to that category
 - **Target Engine on Selected Object** - same, restricted to engines.
 - **Target Turret on Selected Object** - same, restricted to turrets and launchers.
 - **Target Shield Generator on Selected Object** - same, restricted to shield generators.
-- **Target Active Mission Object** - the object your current mission points at.
+- **Target Active Mission Object** - the next thing to fly to for your active mission: the gate or highway entrance on the route to its objective.
 
 The four surface-element hotkeys work on the object **you have selected** and on nothing else: select a carrier across the sector and you get that carrier's turrets, not those of the fighter next to you. With a surface element already selected they stay on the same hull, and so does Next/Previous. With nothing selected they fall back to the last hull you worked on; with no previous hull they do nothing and say so. Docked ships are never included, so cycling a carrier's turrets won't wander into its bays.
 
@@ -75,7 +79,7 @@ The four surface-element hotkeys work on the object **you have selected** and on
 - **Target Along Line of Sight** - picks whatever you're looking at.
 - **Narrow Filter to Selected Type** - pins the active filter to the type of the selected object.
 
-**Narrow Filter to Selected Type** needs a target one of this mod's hotkeys put there. It's set-only, not a toggle - pressing it again changes nothing, since everything you can cycle to is already of that type. It goes away exactly when the filter does.
+**Narrow Filter to Selected Type** needs a target one of this mod's category hotkeys put there, and **Keep the filter after acquiring a target** on. With **Narrow the filter on any target** switched on it works on anything you have targeted (a line-of-sight pick, a mouse click): Next/Previous then walk every visible object of that one type. It's set-only, not a toggle - pressing it again changes nothing, since everything you can cycle to is already of that type. It goes away exactly when the filter does.
 
 **Target Along Line of Sight** starts from a one-degree cone dead ahead and widens in steps to 25 degrees, stopping at the first hit, so what's under your crosshair wins over what's merely in front of you. Surface elements are searched at each step, with a range limit that tightens as the cone widens, so a wide sweep can't snap you onto a turret on a distant station.
 
@@ -121,6 +125,8 @@ Everything is configurable under **Options > Hotkey Management > Advanced Target
 - **Extended range multiplier** (`2`) - how far beyond radar range large and already-known objects stay pickable.
 - **Own ships checked for a free dock** (`12`) - caps the docking-bay scan behind *Target Nearest Own Ship for Landing*.
 - **Prefer visible surface elements when a target is lost** (on) - hand over to an element you have line of sight to rather than one hidden behind the hull.
+- **Narrow the filter on any target, not only a filtered one** (off) - lets *Narrow Filter to Selected Type* work on a target picked by line of sight or by mouse.
+- **Keep the filter when the target is destroyed** (off) - in the categories that don't hand over automatically (stations, gates, asteroids, own ships, free cycling), destroying or collecting the target keeps the category and any type narrowing, so Next/Previous carry on where you were. Deselecting a target yourself still clears the filter.
 
 **Feedback**:
 
@@ -161,10 +167,18 @@ You then get one line per key press (which hotkey, which filter, what got target
 
 ## Changelog
 
-### [1.01] - 2026-08-??
+### [1.01] - 2026-10-13
 
+- **Added**
+  - Option **Narrow the filter on any target, not only a filtered one**.
+  - Option **Keep the filter when the target is destroyed**.
+- **Changed**
+  - **Target Active Mission Object** selects the gate on the route to the mission objective.
 - **Fixed**
-  - The "no matching target" notifications never appeared - the message text was assembled in a way the script parser rejected.
+  - The "no matching target" notifications never appeared.
+  - Every targeting hotkey wrote a script error to the game log.
+  - Script errors in the game log on the first load into an existing save.
+  - An enemy whose pilot bailed out stayed selected.
 
 ### [1.00] - 2026-07-31
 

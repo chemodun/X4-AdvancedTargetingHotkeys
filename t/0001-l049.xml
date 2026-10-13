@@ -40,6 +40,9 @@
       <t id="2003">Filter eingeschränkt auf %s</t>
       <t id="2004">%s: nichts vom Typ %s gefunden</t>
       <t id="2005">Zuerst ein Ziel mit einem gefilterten Hotkey wählen</t>
+      <t id="2006">Nichts vom Typ %s gefunden</t>
+      <t id="2007">Einschränken erfordert "Filter nach Zielerfassung beibehalten"</t>
+      <t id="2008">Zuerst ein Ziel wählen</t>
       <!-- settings page - hotkey groups -->
       <t id="90100">Hotkey-Gruppen</t>
       <t id="90101">Kampfziele</t>
@@ -54,6 +57,8 @@
       <t id="90122">Multiplikator für erweiterte Reichweite</t>
       <t id="90123">Auf freien Dock geprüfte eigene Schiffe</t>
       <t id="90124">Bei Zielverlust sichtbare Oberflächenelemente bevorzugen</t>
+      <t id="90125">Filter bei jedem Ziel einschränken, nicht nur bei gefilterten</t>
+      <t id="90126">Filter beibehalten, wenn das Ziel zerstört wird</t>
       <!-- settings page - feedback -->
       <t id="90140">Rückmeldung</t>
       <t id="90141">Ton abspielen</t>

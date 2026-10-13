@@ -40,6 +40,9 @@
       <t id="2003">Filtre restreint à %s</t>
       <t id="2004">%s : aucun objet de type %s</t>
       <t id="2005">Sélectionnez d'abord une cible avec un raccourci filtré</t>
+      <t id="2006">Aucun objet de type %s</t>
+      <t id="2007">La restriction nécessite "Conserver le filtre après acquisition" activé</t>
+      <t id="2008">Sélectionnez d'abord une cible</t>
       <!-- settings page - hotkey groups -->
       <t id="90100">Groupes de raccourcis</t>
       <t id="90101">Cibles de combat</t>
@@ -54,6 +57,8 @@
       <t id="90122">Multiplicateur de portée étendue</t>
       <t id="90123">Vaisseaux vérifiés pour un dock libre</t>
       <t id="90124">Préférer les éléments de surface visibles à la perte d'une cible</t>
+      <t id="90125">Restreindre le filtre sur toute cible, pas seulement une cible filtrée</t>
+      <t id="90126">Conserver le filtre quand la cible est détruite</t>
       <!-- settings page - feedback -->
       <t id="90140">Retour</t>
       <t id="90141">Jouer un son</t>

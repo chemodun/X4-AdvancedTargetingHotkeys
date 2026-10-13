@@ -40,6 +40,9 @@
       <t id="2003">Filtre %s ile sınırlandı</t>
       <t id="2004">%s: %s türünde bir hedef bulunamadı</t>
       <t id="2005">Önce filtreli bir kısayolla hedef seçin</t>
+      <t id="2006">%s türünde bir hedef bulunamadı</t>
+      <t id="2007">Daraltmak için "Hedef alındıktan sonra filtreyi koru" açık olmalı</t>
+      <t id="2008">Önce bir hedef seçin</t>
       <!-- settings page - hotkey groups -->
       <t id="90100">Kısayol Grupları</t>
       <t id="90101">Savaş Hedefleri</t>
@@ -54,6 +57,8 @@
       <t id="90122">Genişletilmiş menzil çarpanı</t>
       <t id="90123">Boş dok için kontrol edilen kendi gemilerin</t>
       <t id="90124">Hedef kaybedildiğinde görünür yüzey ögelerini tercih et</t>
+      <t id="90125">Filtreyi yalnızca filtreli hedefte değil, her hedefte daralt</t>
+      <t id="90126">Hedef yok edildiğinde filtreyi koru</t>
       <!-- settings page - feedback -->
       <t id="90140">Geri Bildirim</t>
       <t id="90141">Ses çal</t>

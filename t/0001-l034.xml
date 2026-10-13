@@ -40,6 +40,9 @@
       <t id="2003">Filtro restringido a %s</t>
       <t id="2004">%s: no se encontró nada del tipo %s</t>
       <t id="2005">Selecciona primero un objetivo con una tecla filtrada</t>
+      <t id="2006">No se encontró nada del tipo %s</t>
+      <t id="2007">Restringir requiere activar "Mantener el filtro tras fijar un objetivo"</t>
+      <t id="2008">Selecciona primero un objetivo</t>
       <!-- settings page - hotkey groups -->
       <t id="90100">Grupos de teclas</t>
       <t id="90101">Objetivos de combate</t>
@@ -54,6 +57,8 @@
       <t id="90122">Multiplicador de alcance ampliado</t>
       <t id="90123">Naves propias comprobadas por un muelle libre</t>
       <t id="90124">Preferir elementos de superficie visibles al perder un objetivo</t>
+      <t id="90125">Restringir el filtro en cualquier objetivo, no solo en uno filtrado</t>
+      <t id="90126">Mantener el filtro cuando el objetivo es destruido</t>
       <!-- settings page - feedback -->
       <t id="90140">Respuesta</t>
       <t id="90141">Reproducir un sonido</t>

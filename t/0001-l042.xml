@@ -40,6 +40,9 @@
       <t id="2003">Filtr omezen na %s</t>
       <t id="2004">%s: nic typu %s nenalezeno</t>
       <t id="2005">Nejprve vyberte cíl filtrovanou klávesou</t>
+      <t id="2006">Nic typu %s nenalezeno</t>
+      <t id="2007">Omezení vyžaduje zapnuté "Zachovat filtr po zaměření cíle"</t>
+      <t id="2008">Nejprve vyberte cíl</t>
       <!-- settings page - hotkey groups -->
       <t id="90100">Skupiny zkratek</t>
       <t id="90101">Bojové cíle</t>
@@ -54,6 +57,8 @@
       <t id="90122">Násobitel rozšířeného dosahu</t>
       <t id="90123">Vlastní lodě kontrolované na volný dok</t>
       <t id="90124">Upřednostnit viditelné povrchové prvky při ztrátě cíle</t>
+      <t id="90125">Omezit filtr na libovolném cíli, nejen na filtrovaném</t>
+      <t id="90126">Zachovat filtr po zničení cíle</t>
       <!-- settings page - feedback -->
       <t id="90140">Zpětná vazba</t>
       <t id="90141">Přehrát zvuk</t>

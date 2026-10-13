@@ -40,6 +40,9 @@
       <t id="2003">Filtr zawężony do %s</t>
       <t id="2004">%s: nie znaleziono niczego typu %s</t>
       <t id="2005">Najpierw wybierz cel filtrowanym skrótem</t>
+      <t id="2006">Nie znaleziono niczego typu %s</t>
+      <t id="2007">Zawężanie wymaga włączenia "Zachowaj filtr po namierzeniu celu"</t>
+      <t id="2008">Najpierw wybierz cel</t>
       <!-- settings page - hotkey groups -->
       <t id="90100">Grupy skrótów</t>
       <t id="90101">Cele bojowe</t>
@@ -54,6 +57,8 @@
       <t id="90122">Mnożnik rozszerzonego zasięgu</t>
       <t id="90123">Sprawdzane własne statki pod kątem wolnego doku</t>
       <t id="90124">Preferuj widoczne elementy powierzchni po utracie celu</t>
+      <t id="90125">Zawężaj filtr na dowolnym celu, nie tylko filtrowanym</t>
+      <t id="90126">Zachowaj filtr po zniszczeniu celu</t>
       <!-- settings page - feedback -->
       <t id="90140">Informacja zwrotna</t>
       <t id="90141">Odtwórz dźwięk</t>

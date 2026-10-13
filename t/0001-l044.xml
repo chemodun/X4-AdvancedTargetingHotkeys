@@ -40,6 +40,9 @@
       <t id="2003">Filter narrowed to %s</t>
       <t id="2004">%s: nothing of type %s found</t>
       <t id="2005">Select a target with a filtered hotkey first</t>
+      <t id="2006">Nothing of type %s found</t>
+      <t id="2007">Narrowing needs "Keep the filter after acquiring a target" on</t>
+      <t id="2008">Select a target first</t>
       <!-- settings page - hotkey groups -->
       <t id="90100">Hotkey Groups</t>
       <t id="90101">Combat Targets</t>
@@ -54,6 +57,8 @@
       <t id="90122">Extended range multiplier</t>
       <t id="90123">Own ships checked for a free dock</t>
       <t id="90124">Prefer visible surface elements when a target is lost</t>
+      <t id="90125">Narrow the filter on any target, not only a filtered one</t>
+      <t id="90126">Keep the filter when the target is destroyed</t>
       <!-- settings page - feedback -->
       <t id="90140">Feedback</t>
       <t id="90141">Play a sound</t>

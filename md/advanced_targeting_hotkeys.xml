@@ -14,7 +14,7 @@
     <!-- Config mirror. The authoritative store is the Lua userdata savedvariable; these
          defaults only cover the first registration pass of a session, which runs before
          Lua has synced the mirror. -->
-    <library name="LoadConfig" purpose="include_actions" version="1">
+    <library name="LoadConfig" purpose="include_actions" version="2">
       <actions>
         <do_if value="@player.entity.$AdvancedTargetingHotkeysConfig == null">
           <set_value name="player.entity.$AdvancedTargetingHotkeysConfig" exact="table[
@@ -30,6 +30,8 @@
             $notifyOnTypeFilter     = true,
             $stickyModeEnabled      = true,
             $preferVisibleOnLoss    = true,
+            $narrowAnyTarget        = false,
+            $keepFilterOnLoss       = false,
             $dockableScanLimit      = 12,
             $targetingBackend       = 'lua',
           ]" />
@@ -72,6 +74,12 @@
         <do_if value="not $config.$preferVisibleOnLoss?">
           <set_value name="$config.$preferVisibleOnLoss" exact="true" />
         </do_if>
+        <do_if value="not $config.$narrowAnyTarget?">
+          <set_value name="$config.$narrowAnyTarget" exact="false" />
+        </do_if>
+        <do_if value="not $config.$keepFilterOnLoss?">
+          <set_value name="$config.$keepFilterOnLoss" exact="false" />
+        </do_if>
         <do_if value="not $config.$dockableScanLimit?">
           <set_value name="$config.$dockableScanLimit" exact="12" />
         </do_if>
@@ -83,7 +91,7 @@
 
     <!-- Runtime state, reset by Init_State. Every key is always present, so consumers can
          test for a null value without also testing for a missing key. -->
-    <library name="LoadState" purpose="include_actions" version="1">
+    <library name="LoadState" purpose="include_actions" version="2">
       <actions>
         <do_if value="@player.entity.$AdvancedTargetingHotkeysState == null">
           <set_value name="player.entity.$AdvancedTargetingHotkeysState" exact="table[
@@ -97,6 +105,7 @@
             $shiftTarget   = null,
             $shiftApplied  = null,
             $shiftAt       = 0s,
+            $lastApplied   = null,
           ]" />
         </do_if>
         <set_value name="$state" exact="player.entity.$AdvancedTargetingHotkeysState" />
@@ -350,9 +359,10 @@
       <actions>
         <create_group groupname="$candidates" />
 
-        <!-- Type pin, handed to every find below as its macro filter. Null means unfiltered. -->
-        <set_value name="$macroFilter" exact="null" />
-        <do_if value="$config.$stickyModeEnabled">
+        <!-- Type pin, handed to every find below as its macro filter. An empty list is unfiltered;
+             null errors in every find. -->
+        <set_value name="$macroFilter" exact="[]" />
+        <do_if value="$config.$stickyModeEnabled and $state.$macroFilter != null">
           <set_value name="$macroFilter" exact="$state.$macroFilter" />
         </do_if>
 
@@ -567,6 +577,7 @@
           <do_else>
             <set_value name="$state.$surfaceTarget" exact="null" />
           </do_else>
+          <set_value name="$state.$lastApplied" exact="$thing" />
           <!-- Follow it, so its loss can hand over to the next one. -->
           <set_value name="$armTarget" exact="$thing" />
           <set_value name="$armMode" exact="$mode" />
@@ -589,6 +600,11 @@
               <include_actions ref="ResolveMacroName" />
               <show_notification text="{1972092437, 2004}.[$modeName, $macroName]" />
             </do_if>
+            <do_elseif value="$config.$stickyModeEnabled and $state.$macroFilter != null">
+              <set_value name="$filterMacro" exact="$state.$macroFilter" />
+              <include_actions ref="ResolveMacroName" />
+              <show_notification text="{1972092437, 2006}.[$macroName]" />
+            </do_elseif>
             <do_elseif value="$modeName != null">
               <show_notification text="{1972092437, 2001}.[$modeName]" />
             </do_elseif>
@@ -874,8 +890,21 @@
         <set_value name="$thing" exact="null" />
         <debug_text text="'AdvancedTargetingHotkeys: acquire id %s, mode %s'.[$id, $mode]" chance="$debugChance" filter="general" />
 
+        <!-- The route waypoint: the gate or highway out of this sector toward the objective, null once
+             in the objective's sector. A highway is not targetable, so its entry gate here stands in. -->
         <do_if value="$mode == 'mission'">
-          <set_value name="$thing" exact="@player.activemissionwaypoint.entity" />
+          <set_value name="$thing" exact="@player.activemissionwaypoint" />
+          <do_if value="$thing != null and $thing.isclass.highway">
+            <set_value name="$highway" exact="$thing" />
+            <set_value name="$thing" exact="null" />
+            <find_object name="$entries" class="[class.highwayentrygate]" space="player.sector" multiple="true" />
+            <do_all counter="$i" exact="$entries.count">
+              <do_if value="@$entries.{$i}.highway == $highway">
+                <set_value name="$thing" exact="$entries.{$i}" />
+                <break />
+              </do_if>
+            </do_all>
+          </do_if>
           <include_actions ref="ApplyTarget" />
           <!-- A mission object is a one-off pick, not a category worth cycling. -->
           <do_if value="$thing != null">
@@ -979,7 +1008,8 @@
 
     <!-- Pins the active filter to the selected object's macro. Next/Previous and the automatic
          hand-over then stay on that one type until an acquisition or any external target change
-         clears it. Sets only - pressing it again on the same selection changes nothing. -->
+         clears it. With no category active it pins free mode, if $narrowAnyTarget allows. Sets
+         only - pressing it again on the same selection changes nothing. -->
     <cue name="Filter_Type_Cue" instantiate="true" namespace="this">
       <conditions>
         <event_cue_signalled />
@@ -991,7 +1021,7 @@
         <set_value name="$mode" exact="$state.$mode" />
         <set_value name="$filterMacro" exact="@player.target.macro" />
 
-        <do_if value="$config.$stickyModeEnabled and $mode != null and $filterMacro != null">
+        <do_if value="$config.$stickyModeEnabled and $filterMacro != null and ($mode != null or $config.$narrowAnyTarget)">
           <set_value name="$state.$macroFilter" exact="$filterMacro" />
           <include_actions ref="ResolveMacroName" />
           <debug_text text="'AdvancedTargetingHotkeys: type filter pinned to %s from %s, mode %s'.[$macroName, player.target.debugname, $mode]"
@@ -1004,13 +1034,21 @@
           </do_if>
         </do_if>
         <do_else>
-          <debug_text text="'AdvancedTargetingHotkeys: type filter needs a selection made by a filtered hotkey - mode %s, target %s'.[$mode, @player.target.debugname]"
+          <debug_text text="'AdvancedTargetingHotkeys: type filter not set - sticky %s, any target %s, mode %s, target %s'.[$config.$stickyModeEnabled, $config.$narrowAnyTarget, $mode, @player.target.debugname]"
             chance="$debugChance" filter="general" />
           <do_if value="$config.$soundEnabled">
             <play_sound sound="'ui_target_set_fail'" type="ui" />
           </do_if>
           <do_if value="$config.$notifyOnFailure">
-            <show_notification text="{1972092437, 2005}" />
+            <do_if value="not $config.$stickyModeEnabled">
+              <show_notification text="{1972092437, 2007}" />
+            </do_if>
+            <do_elseif value="$config.$narrowAnyTarget">
+              <show_notification text="{1972092437, 2008}" />
+            </do_elseif>
+            <do_else>
+              <show_notification text="{1972092437, 2005}" />
+            </do_else>
           </do_if>
         </do_else>
       </actions>
@@ -1104,12 +1142,14 @@
 
     <!-- Sticky-mode invalidation: a target change this mod did not make drops the filter.
          Exception - losing a surface element keeps surface mode, so chewing through a hull
-         does not kick you out after every kill. -->
+         does not kick you out after every kill; $keepFilterOnLoss extends that to any target
+         that is gone. -->
     <cue name="On_Target_Changed" instantiate="true" namespace="this">
       <conditions>
         <event_player_changed_target />
       </conditions>
       <actions>
+        <include_actions ref="LoadConfig" />
         <include_actions ref="LoadState" />
         <include_actions ref="md.HotkeyApi.GetDebugChance" />
         <debug_text text="'AdvancedTargetingHotkeys: target changed to %s, ours: %s, mode %s'.[@event.param.debugname, $state.$selfChange, $state.$mode]"
@@ -1143,7 +1183,6 @@
             <set_value name="$mode" exact="$state.$mode" />
             <debug_text text="'AdvancedTargetingHotkeys: shift pending, applying %s on target change to %s, mode %s'.[$thing.debugname, @event.param.debugname, $mode]"
               chance="$debugChance" filter="general" />
-            <include_actions ref="LoadConfig" />
             <include_actions ref="ApplyTarget" />
             <do_if value="not $applyChanged">
               <!-- The engine picked this object itself. Release only when this event is the one
@@ -1184,6 +1223,11 @@
                 <set_value name="$state.$mode" exact="$state.$surfaceMode" />
               </do_if>
             </do_if>
+            <do_elseif value="$config.$keepFilterOnLoss and $state.$mode != null and @$state.$lastApplied != null
+                        and (not $state.$lastApplied.exists or @$state.$lastApplied.iswreck)">
+              <debug_text text="'AdvancedTargetingHotkeys: branch - target gone, keeping mode %s and type filter %s'.[$state.$mode, $state.$macroFilter]"
+                chance="$debugChance" filter="general" />
+            </do_elseif>
             <do_else>
               <debug_text text="'AdvancedTargetingHotkeys: branch - target cleared externally with no surface state, resetting mode'"
                 chance="$debugChance" filter="general" />
@@ -1232,7 +1276,8 @@
           event_object_changed_owner. Nothing in A fires for a bailed-out hull.
 
       check="false" suppresses the "event object does not exist" error a null
-      Watch_Holder.$watched raises at registration. event.object is the lost object in all four.
+      Watch_Holder.$watched raises at registration; @ covers the first load into a save, before
+      Watch_Holder has run. event.object is the lost object in all four.
 
       $objectGone splits the families, which read the same test in opposite directions: in A,
       still being in the list is what makes the successor knowable; in B it means the target is
@@ -1241,10 +1286,10 @@
     <cue name="Target_Lost" instantiate="true" namespace="this">
       <conditions>
         <check_any>
-          <event_object_destroyed object="Watch_Holder.$watched" check="false" />
-          <event_object_picked_up object="Watch_Holder.$watched" check="false" />
-          <event_object_abandoned object="Watch_Holder.$watched" check="false" />
-          <event_object_changed_owner object="Watch_Holder.$watched" check="false" />
+          <event_object_destroyed object="@Watch_Holder.$watched" check="false" />
+          <event_object_picked_up object="@Watch_Holder.$watched" check="false" />
+          <event_object_abandoned object="@Watch_Holder.$watched" check="false" />
+          <event_object_changed_owner object="@Watch_Holder.$watched" check="false" />
         </check_any>
       </conditions>
       <actions>
@@ -1264,6 +1309,14 @@
           <include_actions ref="BuildCandidates" />
           <set_value name="$index" exact="$candidates.indexof.{event.object}" />
           <set_value name="$thing" exact="null" />
+          <!-- At the owner-change event the object's own ishostileto still reports the old owner,
+               so hostility is read off the new owner faction. -->
+          <do_if value="event.name == 'event_object_changed_owner' and $index gt 0
+                    and ($mode == 'enemyAll' or $mode == 'enemySmall' or $mode == 'enemyLarge')
+                    and not @event.param.ishostileto.{faction.player}">
+            <remove_from_group group="$candidates" object="event.object" />
+            <set_value name="$index" exact="0" />
+          </do_if>
           <!-- Logged here rather than at the queueing line, so the log reads in the order the
                cue runs: index first, then whatever the walk does with it. -->
           <debug_text text="'AdvancedTargetingHotkeys: lost %s is index %s of %s candidates, mode %s'.[@event.object.debugname, $index, $candidates.count, $mode]"

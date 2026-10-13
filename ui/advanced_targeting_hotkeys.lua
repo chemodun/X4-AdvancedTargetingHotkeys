@@ -81,6 +81,8 @@ local DEFAULTS = {
   groupMissionEnabled    = true,
   stickyModeEnabled      = true,
   preferVisibleOnLoss    = true,
+  narrowAnyTarget        = false,
+  keepFilterOnLoss       = false,
   soundEnabled           = true,
   notifyOnFailure        = true,
   notifyOnTypeFilter     = true,
@@ -243,6 +245,8 @@ local function BuildSettingsPage()
     SliderRow("ath_range_multiplier", 90122, "rangeMultiplier", 1, 5, 1),
     SliderRow("ath_dockable_scan_limit", 90123, "dockableScanLimit", 1, 50, 1),
     ToggleRow("ath_prefer_visible_toggle", 90124, "preferVisibleOnLoss", false),
+    ToggleRow("ath_narrow_any_target_toggle", 90125, "narrowAnyTarget", false),
+    ToggleRow("ath_keep_filter_on_loss_toggle", 90126, "keepFilterOnLoss", false),
 
     { id = "line" },
     { id = "header", name = function() return ReadText(PAGE_ID, 90140) end },
