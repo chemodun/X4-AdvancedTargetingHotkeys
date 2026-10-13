@@ -65,7 +65,7 @@ Each targets the nearest match and sets the filter to its category:
 [*] [b]Select Next / Previous Target (Filtered)[/b] - walk the active filter by distance, wrapping around.
 [*] [b]Deselect Target and Reset Filter[/b] - clears both.
 [*] [b]Target Along Line of Sight[/b] - a cone from dead ahead, widening from 1 to 25 degrees; the first hit wins. Range follows the radar; capital ships, stations and gates are pickable further out.
-[*] [b]Narrow Filter to Selected Type[/b] - needs a target from this mod's hotkeys, or any target with [b]Narrow the filter on any target[/b] on.
+[*] [b]Narrow Filter to Selected Type[/b] - needs [b]Keep the filter after acquiring a target[/b] on and a target from this mod's hotkeys, or any target with [b]Narrow the filter on any target[/b] on.
 [/list]
 [h2]When nothing matches[/h2]
 
